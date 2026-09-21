@@ -33,7 +33,7 @@ const Game = (() => {
   const GROUND_HEIGHT = 56; // dải đất ở đáy màn hình, chim chạm vào đây mới tính là rơi
   const PIPE_PATTERN_LENGTH = 3; // 1 pattern áp dụng cho mỗi 3 cột, khớp với nhịp quiz
   const PATTERN_CYCLE = ["easy", "normal", "hard", "zigzag"]; // lặp lại theo vòng, cứ ~4 cụm có 1 cụm "cao trào"
-  const NETWORK_SEND_INTERVAL = 1 / 15; // gửi vị trí chim của mình ~15 lần/giây
+  const NETWORK_SEND_INTERVAL = 1 / 20; // gửi vị trí chim của mình ~20 lần/giây (tăng từ 15 để buffered interpolation có nhiều điểm dữ liệu hơn, mượt hơn)
 
   let bird;
   let pipes; // map CỐ ĐỊNH, sinh 1 lần khi bắt đầu trận, mỗi cột có worldX tuyệt đối không đổi
@@ -46,10 +46,23 @@ const Game = (() => {
   let rand; // seeded RNG dùng chung, đồng bộ giữa mọi người chơi trong phòng (chỉ dùng lúc sinh map 1 lần)
   let matchEndAt; // timestamp (ms) khi trận kết thúc
   let networkSendTimer;
-  let otherPlayers; // Map<socketId, {nickname, targetWorldX, targetY, renderWorldX, renderY, vy, angle, alive}>
+  let otherPlayers; // Map<socketId, {nickname, buffer: [{t, worldX, y, vy}], renderWorldX, renderY, renderVy, alive}>
   let lastTime = null;
   let rafId = null;
+  let mapTotalLength = 0; // tổng chiều dài map (worldX của cột cuối cùng), dùng để tính % tiến độ cho thanh đua
   const VIEW_MARGIN = 80; // chỉ vẽ chim/cột khi nằm trong [-margin, W+margin] so với camera, để không lãng phí lúc quá xa
+
+  // ----- Thanh đua (race track) -----
+  const RACE_BAR_HEIGHT = 22;
+  const RACE_BAR_MARGIN_X = 12; // lề trái/phải của dải đua, icon không bao giờ vẽ sát mép ngoài cùng
+
+  // ----- Chỉ báo người chơi ngoài tầm nhìn (off-screen indicator) -----
+  // Khi ai đó ở quá xa để hiện chim thật trên màn hình, thay vì ẩn hẳn, dán 1 icon nhỏ
+  // sát mép trái/phải canvas theo đúng độ cao (y) thật của họ, thu nhỏ dần theo khoảng cách.
+  const OFFSCREEN_ICON_MARGIN = 22; // khoảng cách từ icon đến mép canvas
+  const OFFSCREEN_ICON_MAX_SCALE = 1; // scale khi vừa ra khỏi tầm nhìn (kích thước gần bằng chim thật)
+  const OFFSCREEN_ICON_MIN_SCALE = 0.5; // scale tối thiểu khi ở rất xa, không nhỏ hơn nữa để vẫn nhìn rõ được
+  const OFFSCREEN_ICON_FALLOFF_DISTANCE = 1200; // khoảng cách (px) để scale giảm từ MAX xuống MIN
 
   // ----- Sinh map cố định 1 lần khi bắt đầu trận -----
   // Map dài đủ để phủ hết thời gian trận đấu + rơi lại từ đầu nhiều lần (người chơi
@@ -138,7 +151,7 @@ const Game = (() => {
 
   function update(dt) {
     updateTimerHud();
-    updateOtherPlayersInterpolation(dt);
+    updateOtherPlayersInterpolation();
 
     if (state !== "playing") return;
     frame++;
@@ -247,6 +260,7 @@ const Game = (() => {
     drawGround();
     drawOtherBirds();
     drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null);
+    drawRaceBar();
   }
 
   function drawSky() {
@@ -381,16 +395,130 @@ const Game = (() => {
     ctx.stroke();
   }
 
+  // Vẽ path hình chữ nhật bo góc, dùng ctx.roundRect() native nếu trình duyệt hỗ trợ
+  // (Chrome 99+/Firefox 112+/Safari 16+), fallback tự vẽ bằng arcTo cho trình duyệt cũ hơn.
+  function drawRoundedRectPath(x, y, w, h, r) {
+    if (typeof ctx.roundRect === "function") {
+      ctx.roundRect(x, y, w, h, r);
+      return;
+    }
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // Thanh đua: dải ngang mỏng nằm trong phần đất, hiển thị icon nhỏ của từng người chơi
+  // theo % quãng đường (worldOffset) đã bay được so với tổng chiều dài map cố định.
+  // Giúp mọi người luôn biết thứ hạng/khoảng cách dù camera không thấy nhau trực tiếp.
+  function drawRaceBar() {
+    if (!mapTotalLength) return;
+
+    const barY = H - GROUND_HEIGHT + (GROUND_HEIGHT - RACE_BAR_HEIGHT) / 2;
+    const barX = RACE_BAR_MARGIN_X;
+    const barWidth = W - RACE_BAR_MARGIN_X * 2;
+
+    // Nền dải đua
+    ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
+    ctx.beginPath();
+    drawRoundedRectPath(barX, barY, barWidth, RACE_BAR_HEIGHT, RACE_BAR_HEIGHT / 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    const progressToX = (worldOffsetValue) => {
+      const ratio = Math.max(0, Math.min(1, worldOffsetValue / mapTotalLength));
+      return barX + ratio * barWidth;
+    };
+
+    // Icon người chơi khác trước (để icon của mình luôn nổi lên trên nếu trùng vị trí)
+    otherPlayers.forEach((p) => {
+      if (!p.alive) return;
+      const theirWorldOffset = p.renderWorldX - 90; // renderWorldX = worldOffset + 90, xem quy ước ở drawOtherBirds
+      drawRaceBarIcon(progressToX(theirWorldOffset), barY + RACE_BAR_HEIGHT / 2, "#6cb6f0", "#2f6ea8");
+    });
+
+    // Icon của chính mình
+    drawRaceBarIcon(progressToX(worldOffset), barY + RACE_BAR_HEIGHT / 2, "#ffc93c", "#c9891a");
+  }
+
+  function drawRaceBarIcon(x, y, fillColor, strokeColor) {
+    ctx.beginPath();
+    ctx.arc(x, y, RACE_BAR_HEIGHT / 2 - 2, 0, Math.PI * 2);
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
   function drawOtherBirds() {
     otherPlayers.forEach((p) => {
       if (!p.alive) return;
-      // p.renderWorldX đã bao gồm sẵn +90 (xem listener player:update: targetWorldX = theirWorldOffset + 90),
+      // p.renderWorldX (đã nội suy từ buffer, xem updateOtherPlayersInterpolation) bao gồm sẵn +90,
       // cùng quy ước với birdWorldX = worldOffset + 90 của chính mình. Quy đổi sang màn hình theo
       // cùng công thức như cột: screenX = renderWorldX - worldOffset (không cộng thêm 90 lần nữa).
       const screenX = p.renderWorldX - worldOffset;
-      if (screenX < -VIEW_MARGIN || screenX > W + VIEW_MARGIN) return; // ngoài tầm nhìn -> ẩn hẳn
-      drawBird({ x: screenX, y: p.renderY, vy: p.vy }, false, p.nickname);
+
+      if (screenX >= -VIEW_MARGIN && screenX <= W + VIEW_MARGIN) {
+        // Trong tầm nhìn -> vẽ chim thật như bình thường
+        drawBird({ x: screenX, y: p.renderY, vy: p.renderVy }, false, p.nickname);
+      } else {
+        // Ngoài tầm nhìn -> dán icon thu nhỏ sát mép trái/phải thay vì ẩn hẳn
+        drawOffscreenIndicator(screenX, p.renderY);
+      }
     });
+  }
+
+  // Dán icon thu nhỏ sát mép canvas cho người chơi hiện đang ở ngoài tầm nhìn.
+  // screenX âm (< 0) -> họ ở phía sau mình -> dán mép trái. screenX > W -> họ ở phía trước -> dán mép phải.
+  function drawOffscreenIndicator(screenX, worldY) {
+    const isBehind = screenX < 0;
+    const iconX = isBehind ? OFFSCREEN_ICON_MARGIN : W - OFFSCREEN_ICON_MARGIN;
+
+    // Khoảng cách thật (px) từ mép tầm nhìn tới vị trí của họ, dùng để tính scale giảm dần
+    const edgeX = isBehind ? -VIEW_MARGIN : W + VIEW_MARGIN;
+    const distance = Math.abs(screenX - edgeX);
+    const falloffRatio = Math.min(1, distance / OFFSCREEN_ICON_FALLOFF_DISTANCE);
+    const scale = OFFSCREEN_ICON_MAX_SCALE - (OFFSCREEN_ICON_MAX_SCALE - OFFSCREEN_ICON_MIN_SCALE) * falloffRatio;
+
+    // Kẹp y trong khung nhìn để icon không tràn lên đỉnh trời hoặc đè lên mặt đất/thanh đua
+    const iconMarginY = 30;
+    const iconY = Math.max(iconMarginY, Math.min(H - GROUND_HEIGHT - iconMarginY, worldY));
+
+    ctx.save();
+    ctx.translate(iconX, iconY);
+    ctx.scale(scale, scale);
+
+    // Icon dạng chim đơn giản hóa (không vẽ chi tiết cánh/mắt như chim thật, giữ nhẹ và rõ ở size nhỏ)
+    const r = bird.radius;
+    ctx.fillStyle = "#6cb6f0";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r, r * 0.92, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#2f6ea8";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Mũi tên chỉ hướng (trái/phải) để người chơi biết họ đang ở phía trước hay phía sau mình
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    if (isBehind) {
+      ctx.moveTo(-r - 6, 0);
+      ctx.lineTo(-r + 2, -5);
+      ctx.lineTo(-r + 2, 5);
+    } else {
+      ctx.moveTo(r + 6, 0);
+      ctx.lineTo(r - 2, -5);
+      ctx.lineTo(r - 2, 5);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
   }
 
   function drawBird(b, isSelf, nickname) {
@@ -473,15 +601,45 @@ const Game = (() => {
     ctx.restore();
 
     if (nickname) {
-      ctx.save();
-      ctx.font = "bold 12px Nunito, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillText(nickname, b.x + 1, b.y - r - 9);
-      ctx.fillStyle = "#fff";
-      ctx.fillText(nickname, b.x, b.y - r - 10);
-      ctx.restore();
+      drawNicknameBadge(b.x, b.y - r - 12, nickname, isSelf);
     }
+  }
+
+  // Nhãn tên dạng "pill" (nền tối mờ, bo tròn hết cỡ, viền màu riêng cho mình/người khác)
+  // hiện phía trên đầu chim, giống nhãn tên trong các game nhiều người chơi phổ biến.
+  // anchorX/anchorY là điểm giữa-dưới của nhãn (ngay trên đỉnh đầu chim).
+  function drawNicknameBadge(anchorX, anchorY, nickname, isSelf) {
+    ctx.save();
+    ctx.font = "bold 12px Baloo 2, Nunito, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    const paddingX = 8;
+    const badgeHeight = 18;
+    const textWidth = ctx.measureText(nickname).width;
+    const badgeWidth = textWidth + paddingX * 2;
+
+    const badgeX = anchorX - badgeWidth / 2;
+    const badgeY = anchorY - badgeHeight;
+
+    // Nền badge, tối mờ để luôn nổi rõ dù nền trời sáng hay tối
+    ctx.fillStyle = "rgba(15, 20, 35, 0.72)";
+    ctx.beginPath();
+    drawRoundedRectPath(badgeX, badgeY, badgeWidth, badgeHeight, badgeHeight / 2);
+    ctx.fill();
+
+    // Viền màu riêng: vàng cho chính mình, xanh dương cho người khác - khớp màu thân chim
+    ctx.strokeStyle = isSelf ? "rgba(255, 201, 60, 0.9)" : "rgba(108, 182, 240, 0.9)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Chữ tên, có đổ bóng nhẹ để không bị chìm vào nền badge
+    ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
+    ctx.shadowBlur = 2;
+    ctx.fillStyle = "#fff";
+    ctx.fillText(nickname, anchorX, badgeY + badgeHeight / 2 + 1);
+
+    ctx.restore();
   }
 
   // ----- Vòng lặp chính -----
@@ -508,34 +666,78 @@ const Game = (() => {
   canvas.addEventListener("mousedown", handleInput);
   canvas.addEventListener("touchstart", handleInput, { passive: false });
 
-  // ----- Đồng bộ mạng -----
-  // Server chỉ gửi vị trí người khác ~15 lần/giây (xem NETWORK_SEND_INTERVAL), trong khi
-  // game vẽ lại ~60 lần/giây -> nếu vẽ thẳng theo vị trí mới nhận được, chim đối phương sẽ
-  // "nhảy cóc" giật cục giữa các lần cập nhật. Để mượt, mỗi entry giữ thêm targetWorldX/targetY
-  // (vị trí thật mới nhất từ server, theo world coordinate CỐ ĐỊNH trên map chung) tách biệt
-  // với renderWorldX/renderY (vị trí đang vẽ), và mỗi frame trong update() sẽ kéo dần
-  // renderWorldX/Y về targetWorldX/Y (nội suy tuyến tính - lerp).
+  // ----- Đồng bộ mạng: buffered interpolation (kỹ thuật chuẩn dùng trong game FPS/MOBA) -----
+  // Thay vì "đuổi theo" vị trí mới nhất bằng lerp (luôn trễ pha, giật khi mạng jitter),
+  // ta giữ lại một buffer các snapshot {t, worldX, y, vy} gần nhất kèm timestamp cục bộ.
+  // Khi vẽ, ta cố tình lùi lại RENDER_DELAY_MS (ví dụ 100ms) so với hiện tại, rồi nội suy
+  // CHÍNH XÁC giữa 2 snapshot THẬT bao quanh thời điểm đó -> chuyển động mượt tuyệt đối
+  // giữa các điểm dữ liệu có thật, và chịu được độ trễ/jitter mạng thay đổi thất thường
+  // tốt hơn nhiều so với lerp đơn thuần.
+  const RENDER_DELAY_MS = 100; // ~1.5 lần khoảng cách trung bình giữa 2 lần gửi (1000/15 ≈ 67ms)
+  const MAX_BUFFER_SIZE = 30; // đủ chứa ~2 giây dữ liệu ở tần suất gửi hiện tại, tránh phình vô hạn
+
   Network.on("player:update", ({ id, worldOffset: theirWorldOffset, y, vy, angle, alive }) => {
     const existing = otherPlayers.get(id);
-    otherPlayers.set(id, {
-      nickname: existing ? existing.nickname : "?",
-      targetWorldX: theirWorldOffset + 90, // +90 để khớp quy ước "chim ở world = worldOffset + 90"
-      targetY: y,
-      renderWorldX: existing ? existing.renderWorldX : theirWorldOffset + 90,
-      renderY: existing ? existing.renderY : y,
-      vy,
-      angle,
-      alive,
-    });
+    const worldX = theirWorldOffset + 90; // +90 để khớp quy ước "chim ở world = worldOffset + 90"
+    const snapshot = { t: performance.now(), worldX, y, vy };
+
+    if (existing) {
+      existing.buffer.push(snapshot);
+      if (existing.buffer.length > MAX_BUFFER_SIZE) existing.buffer.shift();
+      existing.alive = alive;
+    } else {
+      otherPlayers.set(id, {
+        nickname: "?",
+        buffer: [snapshot],
+        renderWorldX: worldX,
+        renderY: y,
+        renderVy: vy,
+        alive,
+      });
+    }
   });
 
-  const INTERP_SPEED = 12; // hệ số lerp mỗi giây, càng lớn càng bám sát vị trí thật càng nhanh
+  function updateOtherPlayersInterpolation() {
+    const renderTime = performance.now() - RENDER_DELAY_MS;
 
-  function updateOtherPlayersInterpolation(dt) {
-    const t = Math.min(1, INTERP_SPEED * dt);
     otherPlayers.forEach((p) => {
-      p.renderWorldX += (p.targetWorldX - p.renderWorldX) * t;
-      p.renderY += (p.targetY - p.renderY) * t;
+      const buf = p.buffer;
+      if (buf.length === 0) return;
+
+      // Dọn các snapshot đã quá cũ (chỉ giữ lại tối đa 1 điểm trước renderTime để làm mốc nội suy)
+      while (buf.length > 2 && buf[1].t <= renderTime) buf.shift();
+
+      if (buf.length === 1) {
+        // Chưa đủ 2 điểm để nội suy (vừa mới có người khác vào phòng) -> dùng thẳng điểm duy nhất
+        p.renderWorldX = buf[0].worldX;
+        p.renderY = buf[0].y;
+        p.renderVy = buf[0].vy;
+        return;
+      }
+
+      const a = buf[0];
+      const b = buf[1];
+
+      if (renderTime <= a.t) {
+        // renderTime rơi trước cả điểm cũ nhất trong buffer (vừa nhận dữ liệu, delay chưa kịp "chín")
+        p.renderWorldX = a.worldX;
+        p.renderY = a.y;
+        p.renderVy = a.vy;
+      } else if (renderTime >= b.t) {
+        // renderTime vượt quá điểm mới nhất (mạng đang bị trễ/mất gói) -> ngoại suy nhẹ theo
+        // vận tốc y báo cáo cuối cùng, thay vì đứng hình chờ gói tiếp theo.
+        const extrapolateMs = Math.min(renderTime - b.t, 150); // giới hạn ngoại suy tối đa 150ms để tránh bay lố quá xa
+        p.renderWorldX = b.worldX; // world X gắn với tốc độ cột cố định, không ngoại suy để tránh lệch camera
+        p.renderY = b.y + b.vy * (extrapolateMs / 1000);
+        p.renderVy = b.vy;
+      } else {
+        // Trường hợp chuẩn: nội suy chính xác giữa 2 snapshot thật bao quanh renderTime
+        const span = b.t - a.t;
+        const ratio = span > 0 ? (renderTime - a.t) / span : 0;
+        p.renderWorldX = a.worldX + (b.worldX - a.worldX) * ratio;
+        p.renderY = a.y + (b.y - a.y) * ratio;
+        p.renderVy = a.vy + (b.vy - a.vy) * ratio;
+      }
     });
   }
 
@@ -566,6 +768,7 @@ const Game = (() => {
     frame = 0;
     matchEndAt = Date.now() + durationSec * 1000;
     pipes = generateFixedMap(durationSec); // map cố định chung, sinh 1 lần duy nhất cho cả trận
+    mapTotalLength = pipes[pipes.length - 1].worldX; // dùng làm mốc 100% cho thanh đua
 
     otherPlayers = new Map();
     if (room && room.players) {
@@ -573,12 +776,10 @@ const Game = (() => {
         if (p.id !== Network.id) {
           otherPlayers.set(p.id, {
             nickname: p.nickname,
-            targetWorldX: 90,
-            targetY: H / 2,
+            buffer: [{ t: performance.now(), worldX: 90, y: H / 2, vy: 0 }],
             renderWorldX: 90,
             renderY: H / 2,
-            vy: 0,
-            angle: 0,
+            renderVy: 0,
             alive: true,
           });
         }
