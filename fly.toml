@@ -1,0 +1,24 @@
+# Cấu hình deploy Fly.io cho BirdFall multiplayer server.
+# QUAN TRỌNG: app này giữ toàn bộ state phòng chơi (rooms, players, timer) trong RAM
+# của 1 process Node.js sống liên tục -> auto_stop_machines PHẢI để "off", nếu không
+# Fly sẽ tắt máy khi rảnh và làm mất hết phòng đang chờ/đang chơi giữa chừng.
+
+app = "birdfall-multiplayer" # đổi thành tên bạn muốn, phải là duy nhất trên toàn Fly.io
+primary_region = "sin"       # Singapore - gần Việt Nam nhất trong các region của Fly.io
+
+[build]
+
+[env]
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "off"   # KHÔNG tắt máy khi rảnh -> giữ state phòng chơi trong RAM
+  auto_start_machines = true
+  min_machines_running = 1     # luôn giữ ít nhất 1 máy chạy, không để về 0
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

@@ -1,0 +1,17 @@
+[
+  {
+    "question": "2 + 2 x 2 = ?",
+    "options": ["6", "8", "4", "10"],
+    "answerIndex": 0
+  },
+  {
+    "question": "Thủ đô của Việt Nam là gì?",
+    "options": ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Huế"],
+    "answerIndex": 0
+  },
+  {
+    "question": "Đây chỉ là câu hỏi mẫu, hãy tự soạn thêm trong questions.json",
+    "options": ["Ok", "Đồng ý", "Rõ", "Cả 3 đáp án trên"],
+    "answerIndex": 3
+  }
+]

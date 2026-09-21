@@ -1,0 +1,482 @@
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;600;700&display=swap");
+
+:root {
+  --bg-deep: #14213d;
+  --accent: #ffc93c;
+  --accent-dark: #e6a020;
+  --danger: #ff6b4a;
+  --success: #4ecb71;
+  --panel: #1b2a4a;
+  --panel-border: #2f4270;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 20%, #24345e 0%, #101a30 70%, #0b1322 100%);
+  font-family: "Nunito", "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+#game-container {
+  position: relative;
+  width: 480px;
+  height: 640px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 0 4px rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+#game-canvas {
+  display: block;
+  background: linear-gradient(#4ec0e9, #cdf3f5);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 16, 32, 0.35), rgba(10, 16, 32, 0.75));
+  backdrop-filter: blur(2px);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  animation: overlayFadeIn 0.25s ease;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.overlay h1 {
+  margin: 0 0 12px;
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 0 24px rgba(255, 201, 60, 0.35);
+}
+
+.overlay p {
+  margin: 0 0 24px;
+  line-height: 1.6;
+  font-size: 15px;
+  color: #e8ecf7;
+}
+
+button {
+  padding: 13px 32px;
+  font-size: 18px;
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+  color: #3a2a05;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #b3780f, 0 8px 16px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.03);
+}
+
+button:active {
+  transform: translateY(2px) scale(0.97);
+  box-shadow: 0 2px 0 #b3780f, 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+#quiz-box {
+  background: var(--panel);
+  border-radius: 18px;
+  padding: 28px;
+  width: 90%;
+  max-width: 400px;
+  border: 2px solid var(--panel-border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  animation: quizPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes quizPop {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+#quiz-question {
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  font-size: 21px;
+  margin: 0 0 20px;
+  color: #fff;
+}
+
+#quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz-option-btn {
+  background: #24365e;
+  color: #fff;
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  text-align: left;
+  box-shadow: 0 3px 0 #16223d;
+}
+
+.quiz-option-btn:hover:not(:disabled) {
+  background: #33487a;
+  transform: translateY(-1px);
+}
+
+.quiz-option-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.quiz-option-btn:disabled {
+  cursor: default;
+}
+
+.quiz-option-btn.correct {
+  background: var(--success) !important;
+  color: #0b2e15;
+  box-shadow: 0 3px 0 #2f9950 !important;
+}
+
+.quiz-option-btn.wrong {
+  background: var(--danger) !important;
+  color: #3a0c02;
+  box-shadow: 0 3px 0 #c94a2e !important;
+}
+
+#quiz-feedback {
+  margin-top: 14px;
+  min-height: 20px;
+  font-weight: 700;
+}
+
+#hud {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+#hud.hidden {
+  display: none;
+}
+
+#score-hud {
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  font-size: 40px;
+  font-weight: 800;
+  color: #fff;
+  -webkit-text-stroke: 2px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  line-height: 1;
+}
+
+#timer-hud {
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px 12px;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+
+#timer-hud.time-low {
+  color: #ffb3a0;
+  background: rgba(150, 20, 10, 0.5);
+}
+
+/* ----- Form nhập liệu (nickname, tạo/join phòng) ----- */
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  max-width: 280px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-family: "Nunito", sans-serif;
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+input[type="text"]::placeholder,
+input[type="number"]::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field-label {
+  font-size: 13px;
+  color: #cfd7ee;
+  margin-bottom: 6px;
+  align-self: center;
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 14px;
+  min-height: 18px;
+  margin: 10px 0 0;
+}
+
+.hint-text {
+  color: #b9c3de;
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #e8ecf7;
+  box-shadow: none;
+  border: 2px solid var(--panel-border);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-secondary:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+button.hidden {
+  display: none;
+}
+
+/* ----- Phòng chờ ----- */
+.room-code-label {
+  margin-bottom: 4px !important;
+}
+
+.room-code {
+  font-family: "Baloo 2", monospace;
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--accent);
+  letter-spacing: 3px;
+}
+
+.player-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 20px;
+  width: 100%;
+  max-width: 320px;
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.player-list li {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.player-list .host-tag {
+  font-size: 11px;
+  background: var(--accent);
+  color: #3a2a05;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+
+/* ----- Đếm ngược ----- */
+#countdown-screen {
+  background: rgba(10, 16, 32, 0.5);
+}
+
+#countdown-number {
+  font-family: "Baloo 2", sans-serif;
+  font-size: 120px;
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 0 40px rgba(255, 201, 60, 0.6), 0 4px 0 rgba(0, 0, 0, 0.4);
+  animation: countdownPulse 1s ease;
+}
+
+@keyframes countdownPulse {
+  from {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ----- Thông báo chết + đếm ngược hồi sinh ----- */
+#death-screen {
+  background: rgba(80, 10, 10, 0.55);
+}
+
+#death-screen h1 {
+  color: var(--danger);
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35), 0 0 24px rgba(255, 107, 74, 0.4);
+}
+
+#death-countdown-number {
+  font-family: "Baloo 2", sans-serif;
+  font-size: 90px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(255, 107, 74, 0.5), 0 4px 0 rgba(0, 0, 0, 0.4);
+  animation: countdownPulse 1s ease;
+}
+
+/* ----- Bảng tổng kết ----- */
+.results-list {
+  list-style: none;
+  counter-reset: rank;
+  padding: 0;
+  margin: 8px 0 20px;
+  width: 100%;
+  max-width: 340px;
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results-list li {
+  counter-increment: rank;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.results-list li::before {
+  content: counter(rank);
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--panel-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.results-list li:nth-child(1)::before {
+  background: #ffd54a;
+  color: #3a2a05;
+}
+
+.results-list li:nth-child(2)::before {
+  background: #d7d7e0;
+  color: #2a2a2a;
+}
+
+.results-list li:nth-child(3)::before {
+  background: #e0a672;
+  color: #3a2205;
+}
+
+.results-list .player-score {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* ----- Toast thông báo ngắn (thay cho alert() mặc định) ----- */
+#toast {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  z-index: 50;
+  max-width: 88%;
+  padding: 14px 22px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+  color: #fff;
+  font-family: "Nunito", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#toast.hidden {
+  display: none;
+}

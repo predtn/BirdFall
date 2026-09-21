@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BirdFall - Flappy Quiz Multiplayer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas" width="480" height="640"></canvas>
+
+    <!-- 1. Nhập nickname -->
+    <div id="nickname-screen" class="overlay">
+      <h1>BirdFall</h1>
+      <p>Nhập biệt danh của bạn để bắt đầu</p>
+      <input id="nickname-input" type="text" maxlength="16" placeholder="Biệt danh..." autocomplete="off">
+      <button id="nickname-confirm-btn">Tiếp tục</button>
+      <p id="nickname-error" class="error-text"></p>
+    </div>
+
+    <!-- 2. Chọn tạo phòng hoặc join phòng -->
+    <div id="menu-screen" class="overlay hidden">
+      <h1>Xin chào, <span id="menu-nickname-display"></span>!</h1>
+      <div class="menu-actions">
+        <button id="show-create-btn">Tạo phòng</button>
+        <button id="show-join-btn">Vào phòng</button>
+      </div>
+    </div>
+
+    <!-- 2a. Form tạo phòng -->
+    <div id="create-screen" class="overlay hidden">
+      <h1>Tạo phòng</h1>
+      <input id="create-room-name" type="text" maxlength="24" placeholder="Tên phòng..." autocomplete="off">
+      <label class="field-label" for="create-room-duration">Thời gian chơi (giây)</label>
+      <input id="create-room-duration" type="number" min="30" max="600" value="90">
+      <label class="field-label" for="create-room-max-players">Số người tối đa</label>
+      <input id="create-room-max-players" type="number" min="2" max="30" value="8">
+      <div class="menu-actions">
+        <button id="create-room-btn">Tạo phòng</button>
+        <button id="create-back-btn" class="btn-secondary">Quay lại</button>
+      </div>
+      <p id="create-error" class="error-text"></p>
+    </div>
+
+    <!-- 2b. Form join phòng -->
+    <div id="join-screen" class="overlay hidden">
+      <h1>Vào phòng</h1>
+      <input id="join-room-code" type="text" maxlength="5" placeholder="Mã phòng..." autocomplete="off" style="text-transform:uppercase">
+      <div class="menu-actions">
+        <button id="join-room-btn">Vào phòng</button>
+        <button id="join-back-btn" class="btn-secondary">Quay lại</button>
+      </div>
+      <p id="join-error" class="error-text"></p>
+    </div>
+
+    <!-- 3. Phòng chờ -->
+    <div id="waiting-screen" class="overlay hidden">
+      <h1>Phòng chờ</h1>
+      <p class="room-code-label">Mã phòng: <span id="waiting-room-code" class="room-code"></span></p>
+      <p id="waiting-room-name"></p>
+      <p id="waiting-room-duration"></p>
+      <p id="waiting-room-capacity"></p>
+      <ul id="waiting-player-list" class="player-list"></ul>
+      <div class="menu-actions">
+        <button id="waiting-start-btn" class="hidden">Bắt đầu</button>
+        <button id="waiting-leave-btn" class="btn-secondary">Rời phòng</button>
+      </div>
+      <p id="waiting-hint" class="hint-text"></p>
+    </div>
+
+    <!-- 4. Đếm ngược -->
+    <div id="countdown-screen" class="overlay hidden">
+      <div id="countdown-number">3</div>
+    </div>
+
+    <!-- Chết trong trận: thông báo + đếm ngược hồi sinh -->
+    <div id="death-screen" class="overlay hidden">
+      <h1>💥 Bạn đã chết!</h1>
+      <p>Hồi sinh sau...</p>
+      <div id="death-countdown-number">3</div>
+    </div>
+
+    <!-- Popup quiz -->
+    <div id="quiz-screen" class="overlay hidden">
+      <div id="quiz-box">
+        <h2 id="quiz-question">Câu hỏi?</h2>
+        <div id="quiz-options"></div>
+        <p id="quiz-feedback"></p>
+      </div>
+    </div>
+
+    <!-- 5. Bảng tổng kết -->
+    <div id="results-screen" class="overlay hidden">
+      <h1>Kết thúc trận!</h1>
+      <ol id="results-list" class="results-list"></ol>
+      <div class="menu-actions">
+        <button id="play-again-btn" class="hidden">Chơi lại</button>
+        <button id="disband-btn" class="btn-secondary hidden">Giải tán phòng</button>
+        <p id="results-hint" class="hint-text"></p>
+      </div>
+    </div>
+
+    <!-- HUD điểm số + thời gian còn lại -->
+    <div id="hud" class="hidden">
+      <div id="score-hud">0</div>
+      <div id="timer-hud"></div>
+    </div>
+
+    <!-- Toast thông báo ngắn (thay cho alert() mặc định của trình duyệt) -->
+    <div id="toast" class="hidden"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/rng.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/lobby.js"></script>
+</body>
+</html>
