@@ -61,6 +61,14 @@ function sanitizeNickname(name) {
   return String(name || "").trim().slice(0, 16) || "Ẩn danh";
 }
 
+const AVATAR_COUNT = 10; // khớp đúng số file assets/avt_1.png .. avt_10.png
+
+function sanitizeAvatarId(id) {
+  const n = Math.round(Number(id));
+  if (!Number.isFinite(n) || n < 1 || n > AVATAR_COUNT) return 1; // mặc định avt_1 nếu giá trị không hợp lệ
+  return n;
+}
+
 function roomPublicState(room) {
   return {
     code: room.code,
@@ -72,8 +80,10 @@ function roomPublicState(room) {
     players: [...room.players.entries()].map(([id, p]) => ({
       id,
       nickname: p.nickname,
+      avatarId: p.avatarId,
       score: p.score,
       alive: p.alive,
+      hasFlag: !!p.hasFlag,
       isHost: id === room.hostId,
     })),
   };
@@ -128,6 +138,7 @@ function startMatch(room) {
   for (const p of room.players.values()) {
     p.score = 0;
     p.alive = true;
+    p.hasFlag = false; // cờ MU là thành tựu riêng của TỪNG trận đấu, reset khi bắt đầu trận mới
   }
 
   io.to(room.code).emit("match:started", {
@@ -162,7 +173,7 @@ function removePlayerFromRoom(socketId) {
 }
 
 io.on("connection", (socket) => {
-  socket.on("room:create", ({ nickname, roomName, durationSec, maxPlayers }, cb) => {
+  socket.on("room:create", ({ nickname, roomName, durationSec, maxPlayers, avatarId }, cb) => {
     const code = makeRoomCode();
     const room = {
       code,
@@ -178,8 +189,10 @@ io.on("connection", (socket) => {
     };
     room.players.set(socket.id, {
       nickname: sanitizeNickname(nickname),
+      avatarId: sanitizeAvatarId(avatarId),
       score: 0,
       alive: true,
+      hasFlag: false,
       worldOffset: 0,
       y: 320,
       vy: 0,
@@ -193,7 +206,7 @@ io.on("connection", (socket) => {
     cb({ ok: true, room: roomPublicState(room) });
   });
 
-  socket.on("room:join", ({ nickname, roomCode }, cb) => {
+  socket.on("room:join", ({ nickname, roomCode, avatarId }, cb) => {
     const code = String(roomCode || "").trim().toUpperCase();
     const room = rooms.get(code);
     if (!room) {
@@ -211,8 +224,10 @@ io.on("connection", (socket) => {
 
     room.players.set(socket.id, {
       nickname: sanitizeNickname(nickname),
+      avatarId: sanitizeAvatarId(avatarId),
       score: 0,
       alive: true,
+      hasFlag: false,
       worldOffset: 0,
       y: 320,
       vy: 0,
@@ -286,6 +301,17 @@ io.on("connection", (socket) => {
     if (!p) return;
     p.score = Math.max(p.score, Number(score) || 0);
     io.to(room.code).emit("player:scoreUpdate", { id: socket.id, score: p.score });
+  });
+
+  // Người chơi va chạm được vào logo MU (easter egg) -> đánh dấu skin cờ MU, giữ suốt
+  // trận đấu (không mất khi chết/hồi sinh), broadcast cho CẢ phòng để mọi người đều thấy.
+  socket.on("player:earnFlag", () => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || room.state !== "playing") return;
+    const p = room.players.get(socket.id);
+    if (!p || p.hasFlag) return; // đã có cờ rồi thì bỏ qua, tránh broadcast thừa
+    p.hasFlag = true;
+    io.to(room.code).emit("player:flagEarned", { id: socket.id });
   });
 
   socket.on("disconnect", () => {

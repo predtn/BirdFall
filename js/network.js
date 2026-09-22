@@ -22,16 +22,17 @@ const Network = (() => {
   socket.on("room:disbanded", () => emitLocal("room:disbanded"));
   socket.on("player:update", (data) => emitLocal("player:update", data));
   socket.on("player:scoreUpdate", (data) => emitLocal("player:scoreUpdate", data));
+  socket.on("player:flagEarned", (data) => emitLocal("player:flagEarned", data));
 
-  function createRoom(nickname, roomName, durationSec, maxPlayers) {
+  function createRoom(nickname, roomName, durationSec, maxPlayers, avatarId) {
     return new Promise((resolve) => {
-      socket.emit("room:create", { nickname, roomName, durationSec, maxPlayers }, resolve);
+      socket.emit("room:create", { nickname, roomName, durationSec, maxPlayers, avatarId }, resolve);
     });
   }
 
-  function joinRoom(nickname, roomCode) {
+  function joinRoom(nickname, roomCode, avatarId) {
     return new Promise((resolve) => {
-      socket.emit("room:join", { nickname, roomCode }, resolve);
+      socket.emit("room:join", { nickname, roomCode, avatarId }, resolve);
     });
   }
 
@@ -59,6 +60,10 @@ const Network = (() => {
     socket.emit("player:score", { score });
   }
 
+  function earnFlag() {
+    socket.emit("player:earnFlag");
+  }
+
   return {
     get id() {
       return socket.id;
@@ -72,5 +77,6 @@ const Network = (() => {
     leaveRoom,
     sendPlayerState,
     sendScore,
+    earnFlag,
   };
 })();

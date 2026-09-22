@@ -13,8 +13,10 @@
     <!-- 1. Nhập nickname -->
     <div id="nickname-screen" class="overlay">
       <h1>BirdFall</h1>
-      <p>Nhập biệt danh của bạn để bắt đầu</p>
+      <p>Nhập biệt danh và chọn avatar để bắt đầu</p>
       <input id="nickname-input" type="text" maxlength="16" placeholder="Biệt danh..." autocomplete="off">
+      <p class="field-label">Chọn avatar</p>
+      <div id="avatar-grid" class="avatar-grid"></div>
       <button id="nickname-confirm-btn">Tiếp tục</button>
       <p id="nickname-error" class="error-text"></p>
     </div>
@@ -87,8 +89,13 @@
         <h2 id="quiz-question">Câu hỏi?</h2>
         <div id="quiz-options"></div>
         <p id="quiz-feedback"></p>
-        <img id="quiz-result-img" class="hidden" alt="">
       </div>
+    </div>
+
+    <!-- Ảnh minh họa đúng/sai của quiz - hiện đè GIỮA MÀN HÌNH (không nằm trong quiz-box
+         để tránh popup bị đẩy cao vượt khung 640px rồi bị cắt mất phần trên/dưới). -->
+    <div id="quiz-result-overlay" class="hidden">
+      <img id="quiz-result-img" alt="">
     </div>
 
     <!-- 5. Bảng tổng kết -->

@@ -90,6 +90,32 @@ const Game = (() => {
   const gloryLogoImg = new Image();
   gloryLogoImg.src = "assets/MU.png";
 
+  // ----- Skin cờ MU: thưởng khi VA CHẠM VẬT LÝ THẬT vào logo -----
+  // Khác với vùng crossfade nhạc glory glory (GLORY_RANGE rất rộng, chỉ cần đi ngang qua),
+  // đạt cờ cần chim thực sự chạm vào khung logo (hitbox tương tự va chạm cột). Cờ là skin
+  // đồng bộ qua mạng, mọi người trong phòng đều thấy, giữ nguyên suốt trận dù chết/hồi sinh.
+  const FLAG_HITBOX_RADIUS = GLORY_LOGO_SIZE / 2; // bán kính va chạm = đúng nửa kích thước logo hiển thị
+  const FLAG_ICON_SIZE = 26; // px, kích thước cờ vẽ trên đầu avatar
+  let hasFlag = false; // đã đạt cờ MU trong trận hiện tại chưa (của CHÍNH MÌNH)
+  const flagImg = new Image();
+  flagImg.src = "assets/MU_flag.png";
+
+  // ----- Avatar nhân vật -----
+  // Hitbox va chạm (bird.radius) GIỮ NGUYÊN không đổi để không ảnh hưởng gameplay/độ khó.
+  // Ảnh avatar vẽ to hơn hitbox 1 chút để nhìn rõ mặt nhân vật (phổ biến trong game: avatar
+  // hiển thị to hơn khung va chạm thật, người chơi vẫn né theo đúng hitbox nhỏ hơn ẩn bên trong).
+  const AVATAR_DISPLAY_SCALE = 1.7; // avatar to hơn bird.radius 1.7 lần khi vẽ, không đổi vật lý
+  const AVATAR_COUNT = 10; // khớp đúng số file assets/avt_1.png .. avt_10.png
+  // Preload sẵn cả 10 avatar (thay vì chỉ 1 ảnh cố định như trước) - mỗi người chơi trong
+  // phòng chọn 1 avatarId riêng (1..10) lúc nhập nickname, đồng bộ qua room.players[].avatarId.
+  const avatarImgs = {}; // { [avatarId]: HTMLImageElement }
+  for (let i = 1; i <= AVATAR_COUNT; i++) {
+    const img = new Image();
+    img.src = `assets/avt_${i}.png`;
+    avatarImgs[i] = img;
+  }
+  let myAvatarId = 1; // avatarId của CHÍNH MÌNH, set trong startMultiplayer() từ room.players
+
   // ----- Sinh map cố định 1 lần khi bắt đầu trận -----
   // Map dài đủ để phủ hết thời gian trận đấu + rơi lại từ đầu nhiều lần (người chơi
   // giỏi/tệ khác nhau đều dùng chung 1 map cố định này để so sánh vị trí công bằng).
@@ -190,6 +216,26 @@ const Game = (() => {
     Audio_.updateGloryProximity(bestProximity);
   }
 
+  // Kiểm tra va chạm VẬT LÝ THẬT (hitbox tròn, giống kiểu check cột) với từng logo MU.
+  // Đạt cờ chỉ cần chạm 1 trong 2 logo là đủ (không cần chạm cả 2), và chỉ tính 1 lần
+  // duy nhất trong toàn trận (flagLogoIndexEarned theo dõi theo index logo, nhưng vì chỉ
+  // cần đạt 1 lần nên dùng luôn biến hasFlag để chặn gửi lặp lại).
+  function checkFlagCollision(birdWorldX) {
+    if (hasFlag) return; // đã có cờ rồi thì không cần kiểm tra nữa
+    const logoY = 90; // phải khớp đúng logoY dùng trong drawGloryLogos()
+
+    for (const logoX of gloryLogoWorldXs) {
+      const dx = birdWorldX - logoX;
+      const dy = bird.y - logoY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < bird.radius + FLAG_HITBOX_RADIUS) {
+        hasFlag = true;
+        Network.earnFlag();
+        break;
+      }
+    }
+  }
+
   function update(dt) {
     updateTimerHud();
     updateOtherPlayersInterpolation();
@@ -210,6 +256,7 @@ const Game = (() => {
     const birdWorldX = worldOffset + 90; // vị trí thật của chim trên map cố định (90 = x hiển thị trên màn hình)
 
     updateGloryProximity(birdWorldX);
+    checkFlagCollision(birdWorldX);
 
     for (const pipe of pipes) {
       if (!pipe.passed && pipe.worldX + PIPE_WIDTH < birdWorldX - bird.radius) {
@@ -339,7 +386,7 @@ const Game = (() => {
     drawGround();
     drawOtherBirds();
     const dyingAngle = state === "dying" ? deathAnimElapsed * DEATH_SPIN_SPEED : undefined;
-    drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null, dyingAngle);
+    drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null, dyingAngle, hasFlag, myAvatarId);
     drawRaceBar();
   }
 
@@ -533,25 +580,17 @@ const Game = (() => {
       return barX + ratio * barWidth;
     };
 
+    const raceBarIconRadius = RACE_BAR_HEIGHT / 2 - 2;
+
     // Icon người chơi khác trước (để icon của mình luôn nổi lên trên nếu trùng vị trí)
     otherPlayers.forEach((p) => {
       if (!p.alive) return;
       const theirWorldOffset = p.renderWorldX - 90; // renderWorldX = worldOffset + 90, xem quy ước ở drawOtherBirds
-      drawRaceBarIcon(progressToX(theirWorldOffset), barY + RACE_BAR_HEIGHT / 2, "#6cb6f0", "#2f6ea8");
+      drawAvatar(progressToX(theirWorldOffset), barY + RACE_BAR_HEIGHT / 2, raceBarIconRadius, false, p.avatarId);
     });
 
     // Icon của chính mình
-    drawRaceBarIcon(progressToX(worldOffset), barY + RACE_BAR_HEIGHT / 2, "#ffc93c", "#c9891a");
-  }
-
-  function drawRaceBarIcon(x, y, fillColor, strokeColor) {
-    ctx.beginPath();
-    ctx.arc(x, y, RACE_BAR_HEIGHT / 2 - 2, 0, Math.PI * 2);
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    drawAvatar(progressToX(worldOffset), barY + RACE_BAR_HEIGHT / 2, raceBarIconRadius, true, myAvatarId);
   }
 
   function drawOtherBirds() {
@@ -564,17 +603,17 @@ const Game = (() => {
 
       if (screenX >= -VIEW_MARGIN && screenX <= W + VIEW_MARGIN) {
         // Trong tầm nhìn -> vẽ chim thật như bình thường
-        drawBird({ x: screenX, y: p.renderY, vy: p.renderVy }, false, p.nickname);
+        drawBird({ x: screenX, y: p.renderY, vy: p.renderVy }, false, p.nickname, undefined, p.hasFlag, p.avatarId);
       } else {
         // Ngoài tầm nhìn -> dán icon thu nhỏ sát mép trái/phải thay vì ẩn hẳn
-        drawOffscreenIndicator(screenX, p.renderY);
+        drawOffscreenIndicator(screenX, p.renderY, p.avatarId);
       }
     });
   }
 
   // Dán icon thu nhỏ sát mép canvas cho người chơi hiện đang ở ngoài tầm nhìn.
   // screenX âm (< 0) -> họ ở phía sau mình -> dán mép trái. screenX > W -> họ ở phía trước -> dán mép phải.
-  function drawOffscreenIndicator(screenX, worldY) {
+  function drawOffscreenIndicator(screenX, worldY, avatarId) {
     const isBehind = screenX < 0;
     const iconX = isBehind ? OFFSCREEN_ICON_MARGIN : W - OFFSCREEN_ICON_MARGIN;
 
@@ -592,15 +631,8 @@ const Game = (() => {
     ctx.translate(iconX, iconY);
     ctx.scale(scale, scale);
 
-    // Icon dạng chim đơn giản hóa (không vẽ chi tiết cánh/mắt như chim thật, giữ nhẹ và rõ ở size nhỏ)
     const r = bird.radius;
-    ctx.fillStyle = "#6cb6f0";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, r, r * 0.92, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = "#2f6ea8";
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    drawAvatar(0, 0, r, false, avatarId); // luôn màu viền "người khác" vì off-screen indicator chỉ dùng cho người khác
 
     // Mũi tên chỉ hướng (trái/phải) để người chơi biết họ đang ở phía trước hay phía sau mình
     ctx.fillStyle = "#fff";
@@ -620,7 +652,25 @@ const Game = (() => {
     ctx.restore();
   }
 
-  function drawBird(b, isSelf, nickname, overrideAngle) {
+  // Vẽ avatar nhân vật (ảnh assets/avt_{avatarId}.png) tại (cx, cy), chiều cao khung vẽ =
+  // displayRadius*2 (giữ nguyên kích thước như cũ) - dùng chung cho chim chính, chim người
+  // khác, race bar icon, off-screen indicator. Vẽ NGUYÊN VẸN ảnh gốc (không crop mất phần
+  // đầu/đít), giữ đúng tỉ lệ khung hình thật của ảnh thay vì ép vuông.
+  function drawAvatar(cx, cy, displayRadius, isSelf, avatarId) {
+    const displayHeight = displayRadius * 2;
+    const avatarImg = avatarImgs[avatarId] || avatarImgs[1];
+    if (avatarImg.complete && avatarImg.naturalWidth > 0) {
+      const aspect = avatarImg.naturalWidth / avatarImg.naturalHeight;
+      const displayWidth = displayHeight * aspect;
+      ctx.drawImage(avatarImg, cx - displayWidth / 2, cy - displayHeight / 2, displayWidth, displayHeight);
+    } else {
+      // Ảnh chưa tải xong (hiếm, chỉ ngay lúc mới mở trang) -> vẽ tạm 1 khối màu để không bị trống
+      ctx.fillStyle = isSelf ? "#ffc93c" : "#6cb6f0";
+      ctx.fillRect(cx - displayRadius, cy - displayRadius, displayHeight, displayHeight);
+    }
+  }
+
+  function drawBird(b, isSelf, nickname, overrideAngle, hasFlagSkin, avatarId) {
     ctx.save();
     ctx.translate(b.x, b.y);
     const angle =
@@ -629,82 +679,42 @@ const Game = (() => {
         : Math.max(-0.5, Math.min(0.9, b.vy / (MAX_FALL_SPEED * 0.6)));
     ctx.rotate(angle);
 
-    const r = bird.radius;
-    const wingFlap = Math.sin(frame * 0.4) * 0.5 + 0.5;
+    const r = bird.radius; // hitbox va chạm - KHÔNG đổi, chỉ dùng để tính kích thước hiển thị bên dưới
+    drawAvatar(0, 0, r * AVATAR_DISPLAY_SCALE, isSelf, avatarId);
 
-    ctx.fillStyle = isSelf ? "#e6a020" : "#c9891a";
-    ctx.beginPath();
-    ctx.moveTo(-r + 2, -2);
-    ctx.lineTo(-r - 10, -8);
-    ctx.lineTo(-r - 10, 4);
-    ctx.closePath();
-    ctx.fill();
-
-    const bodyGrad = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 2, 0, 0, r * 1.3);
-    if (isSelf) {
-      bodyGrad.addColorStop(0, "#ffe27a");
-      bodyGrad.addColorStop(0.6, "#ffc93c");
-      bodyGrad.addColorStop(1, "#f2a71b");
-    } else {
-      // Chim của người khác tô màu lạnh hơn (xanh dương) để phân biệt rõ với chim của mình
-      bodyGrad.addColorStop(0, "#a9d8ff");
-      bodyGrad.addColorStop(0.6, "#6cb6f0");
-      bodyGrad.addColorStop(1, "#4a94d8");
+    // Cờ MU (nếu đã đạt) vẽ TRONG CÙNG hệ tọa độ đã translate+rotate theo chim (trước khi
+    // restore), để cán cờ dính chặt vào đầu và xoay cùng chim khi rơi/nhảy - không xoay
+    // theo thì cán cờ sẽ trông như trôi nổi tách rời khỏi đầu, rất kỳ.
+    if (hasFlagSkin) {
+      drawFlagOnHead(0, -r * AVATAR_DISPLAY_SCALE);
     }
-    ctx.fillStyle = bodyGrad;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, r, r * 0.92, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = isSelf ? "#c9891a" : "#2f6ea8";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.fillStyle = "rgba(255, 250, 225, 0.85)";
-    ctx.beginPath();
-    ctx.ellipse(-2, r * 0.35, r * 0.65, r * 0.45, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(-2, 2);
-    ctx.rotate(-0.3 + wingFlap * 0.6);
-    ctx.fillStyle = isSelf ? "#e8901a" : "#3a7fbf";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, r * 0.75, r * 0.4, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = isSelf ? "#b8720f" : "#2a5c8f";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.fillStyle = "#ff6b4a";
-    ctx.beginPath();
-    ctx.moveTo(r - 3, -4);
-    ctx.lineTo(r + 13, 0);
-    ctx.lineTo(r - 3, 6);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = "#d94f30";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(4, -6, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#1a1a2e";
-    ctx.beginPath();
-    ctx.arc(5.5, -6, 2.6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(6.3, -7.2, 1, 0, Math.PI * 2);
-    ctx.fill();
 
     ctx.restore();
 
     if (nickname) {
       drawNicknameBadge(b.x, b.y - r - 12, nickname, isSelf);
     }
+  }
+
+  // Vẽ cờ MU cắm trên đầu avatar, neo đúng CHÂN CỘT CỜ (không phải góc ảnh) vào điểm
+  // (headX, headTopY) - điểm đỉnh đầu-giữa avatar, trong hệ tọa độ CỤC BỘ đã xoay theo chim.
+  // Chân cột trong ảnh gốc (439x378) nằm ở khoảng (83%, 97%) kích thước ảnh - đo bằng mắt
+  // từ ảnh thật, không phải giữa/góc ảnh.
+  const FLAG_POLE_BASE_X_RATIO = 0.83; // vị trí chân cột theo chiều ngang, tính theo % chiều rộng ảnh
+  const FLAG_POLE_BASE_Y_RATIO = 0.97; // vị trí chân cột theo chiều dọc, tính theo % chiều cao ảnh
+
+  function drawFlagOnHead(headX, headTopY) {
+    if (!flagImg.complete || flagImg.naturalWidth === 0) return; // ảnh chưa tải xong thì bỏ qua, không lỗi
+    const aspect = flagImg.naturalWidth / flagImg.naturalHeight;
+    const flagHeight = FLAG_ICON_SIZE;
+    const flagWidth = flagHeight * aspect;
+
+    // Toạ độ chân cột trong khung ảnh đã scale về kích thước hiển thị (flagWidth x flagHeight)
+    const poleBaseX = flagWidth * FLAG_POLE_BASE_X_RATIO;
+    const poleBaseY = flagHeight * FLAG_POLE_BASE_Y_RATIO;
+
+    // Vẽ ảnh sao cho điểm chân cột trùng đúng (headX, headTopY)
+    ctx.drawImage(flagImg, headX - poleBaseX, headTopY - poleBaseY, flagWidth, flagHeight);
   }
 
   // Nhãn tên dạng "pill" (nền tối mờ, bo tròn hết cỡ, viền màu riêng cho mình/người khác)
@@ -790,13 +800,22 @@ const Game = (() => {
     } else {
       otherPlayers.set(id, {
         nickname: "?",
+        avatarId: 1,
         buffer: [snapshot],
         renderWorldX: worldX,
         renderY: y,
         renderVy: vy,
         alive,
+        hasFlag: false,
       });
     }
+  });
+
+  // Người khác vừa đạt cờ MU (va chạm logo) -> đánh dấu để vẽ cờ trên đầu họ, giữ nguyên
+  // suốt trận (không có sự kiện nào xóa cờ, vì cờ persistent theo đúng thiết kế).
+  Network.on("player:flagEarned", ({ id }) => {
+    const p = otherPlayers.get(id);
+    if (p) p.hasFlag = true;
   });
 
   function updateOtherPlayersInterpolation() {
@@ -880,18 +899,24 @@ const Game = (() => {
     const estimatedPipeCount = (PIPE_SPEED * durationSec) / PIPE_SPACING;
     gloryLogoWorldXs = GLORY_LOGO_PERCENTAGES.map((pct) => estimatedPipeCount * pct * PIPE_SPACING);
     Audio_.stopGlory(); // đảm bảo sạch trạng thái glory từ trận trước (nếu có)
+    hasFlag = false; // cờ MU reset mỗi khi bắt đầu trận mới (kể cả bấm "Chơi lại")
 
     otherPlayers = new Map();
+    myAvatarId = 1;
     if (room && room.players) {
       room.players.forEach((p) => {
-        if (p.id !== Network.id) {
+        if (p.id === Network.id) {
+          myAvatarId = p.avatarId || 1;
+        } else {
           otherPlayers.set(p.id, {
             nickname: p.nickname,
+            avatarId: p.avatarId || 1,
             buffer: [{ t: performance.now(), worldX: 90, y: H / 2, vy: 0 }],
             renderWorldX: 90,
             renderY: H / 2,
             renderVy: 0,
             alive: true,
+            hasFlag: !!p.hasFlag,
           });
         }
       });

@@ -4,6 +4,8 @@
 const Lobby = (() => {
   let nickname = "";
   let currentRoom = null; // bản sao state phòng mới nhất nhận từ server
+  let selectedAvatarId = 1; // mặc định avt_1, người chơi có thể đổi ở màn hình nickname
+  const AVATAR_COUNT = 10; // khớp đúng số file assets/avt_1.png .. avt_10.png
 
   // ----- DOM refs -----
   const screens = {
@@ -21,6 +23,7 @@ const Lobby = (() => {
   const nicknameConfirmBtn = document.getElementById("nickname-confirm-btn");
   const nicknameError = document.getElementById("nickname-error");
   const menuNicknameDisplay = document.getElementById("menu-nickname-display");
+  const avatarGrid = document.getElementById("avatar-grid");
 
   const showCreateBtn = document.getElementById("show-create-btn");
   const showJoinBtn = document.getElementById("show-join-btn");
@@ -81,11 +84,36 @@ const Lobby = (() => {
     return currentRoom && currentRoom.hostId === Network.id;
   }
 
+  // ----- Chọn avatar (ngay tại màn hình nickname) -----
+  function renderAvatarGrid() {
+    avatarGrid.innerHTML = "";
+    for (let i = 1; i <= AVATAR_COUNT; i++) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "avatar-option";
+      if (i === selectedAvatarId) btn.classList.add("selected");
+      btn.dataset.avatarId = i;
+
+      const img = document.createElement("img");
+      img.src = `assets/avt_${i}.png`;
+      img.alt = `Avatar ${i}`;
+      btn.appendChild(img);
+
+      btn.addEventListener("click", () => {
+        selectedAvatarId = i;
+        avatarGrid.querySelectorAll(".avatar-option").forEach((el) => el.classList.remove("selected"));
+        btn.classList.add("selected");
+      });
+
+      avatarGrid.appendChild(btn);
+    }
+  }
+
   // ----- Màn hình 1: nickname -----
   function confirmNickname() {
     const value = nicknameInput.value.trim();
     if (!value) {
-      nicknameError.textContent = "Nhập biệt danh đã bạn ơi!";
+      nicknameError.textContent = "Biệt danh đê!";
       return;
     }
     nickname = value.slice(0, 16);
@@ -117,7 +145,7 @@ const Lobby = (() => {
     const roomName = createRoomName.value.trim();
     const durationSec = Number(createRoomDuration.value) || 90;
     const maxPlayers = Number(createRoomMaxPlayers.value) || 8;
-    const res = await Network.createRoom(nickname, roomName, durationSec, maxPlayers);
+    const res = await Network.createRoom(nickname, roomName, durationSec, maxPlayers, selectedAvatarId);
     createRoomBtn.disabled = false;
     if (!res.ok) {
       createError.textContent = res.error || "Không tạo được phòng.";
@@ -132,11 +160,11 @@ const Lobby = (() => {
   joinRoomBtn.addEventListener("click", async () => {
     const code = joinRoomCode.value.trim().toUpperCase();
     if (!code) {
-      joinError.textContent = "Nhập mã phòng đã bạn ơi!";
+      joinError.textContent = "Mã phòng đã chứ!";
       return;
     }
     joinRoomBtn.disabled = true;
-    const res = await Network.joinRoom(nickname, code);
+    const res = await Network.joinRoom(nickname, code, selectedAvatarId);
     joinRoomBtn.disabled = false;
     if (!res.ok) {
       joinError.textContent = res.error || "Không vào được phòng.";
@@ -158,7 +186,17 @@ const Lobby = (() => {
     waitingPlayerList.innerHTML = "";
     currentRoom.players.forEach((p) => {
       const li = document.createElement("li");
-      li.textContent = p.nickname;
+
+      const avatarImg = document.createElement("img");
+      avatarImg.className = "player-list-avatar";
+      avatarImg.src = `assets/avt_${p.avatarId || 1}.png`;
+      avatarImg.alt = "";
+      li.appendChild(avatarImg);
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = p.nickname;
+      li.appendChild(nameSpan);
+
       if (p.isHost) {
         const tag = document.createElement("span");
         tag.className = "host-tag";
@@ -193,6 +231,10 @@ const Lobby = (() => {
     // ép reflow để animation chạy lại mỗi lần đổi số
     void countdownNumber.offsetWidth;
     countdownNumber.style.animation = "";
+
+    // Phát "3-2-1-Fight" đúng 1 lần duy nhất khi bắt đầu đếm ngược (count=3 là lần đầu
+    // tiên server bắn sự kiện này), không phát lại ở count=2/1 để tránh chồng âm.
+    if (count === 3) Audio_.playCountdown();
   });
 
   // ----- Bắt đầu trận: chuyển quyền điều khiển sang game.js -----
@@ -259,11 +301,20 @@ const Lobby = (() => {
     hud.classList.add("hidden");
     currentRoom = null;
     showOnly("menu");
-    showToast("Phòng đã bị giải tán bởi chủ phòng.");
+    showToast("Tản giái");
+  });
+
+  // ----- Click sound cho MỌI nút bấm trong game (event delegation ở cấp document) -----
+  // Bắt sự kiện click nổi bọt (bubble) lên document thay vì gắn từng listener riêng cho
+  // từng nút - tự động phủ hết mọi <button> tĩnh trong HTML (lobby) lẫn nút sinh động
+  // (đáp án quiz trong quiz.js), không cần sửa thêm chỗ nào khác khi thêm nút mới sau này.
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("button")) Audio_.playClick();
   });
 
   // ----- Khởi động -----
   Quiz.loadQuestions();
+  renderAvatarGrid();
   showOnly("nickname");
 
   return {};

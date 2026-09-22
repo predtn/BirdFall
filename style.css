@@ -50,6 +50,7 @@ body {
   justify-content: center;
   text-align: center;
   padding: 24px;
+  overflow-y: auto; /* dự phòng nếu nội dung dài hơn khung 640px, cho cuộn thay vì bị cắt cứng */
   animation: overlayFadeIn 0.25s ease;
 }
 
@@ -184,17 +185,30 @@ button:active {
   font-weight: 700;
 }
 
-#quiz-result-img {
-  display: block;
-  margin: 14px auto 0;
-  max-width: 100%;
-  max-height: 220px;
-  border-radius: 12px;
-  animation: quizPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* Overlay riêng cho ảnh minh họa đúng/sai, đè GIỮA MÀN HÌNH lên trên cả quiz-box.
+   Tách khỏi #quiz-box để tránh popup bị đẩy cao hơn khung 640px cố định rồi bị cắt mất
+   phần trên/dưới (đơn giản hơn nhiều so với việc căn chỉnh chiều cao popup cho vừa khít). */
+#quiz-result-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10; /* đè lên trên quiz-screen (không có z-index riêng, mặc định theo thứ tự DOM) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; /* không chặn click vào các nút đáp án phía dưới */
 }
 
-#quiz-result-img.hidden {
+#quiz-result-overlay.hidden {
   display: none;
+}
+
+#quiz-result-img {
+  display: block;
+  max-width: 78%;
+  max-height: 55%;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  animation: quizPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 #hud {
@@ -273,6 +287,42 @@ input[type="number"]:focus {
   align-self: center;
 }
 
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+  max-width: 320px;
+}
+
+.avatar-option {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  border: 3px solid transparent;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+}
+
+.avatar-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  pointer-events: none; /* click luôn tính vào nút cha .avatar-option, không kẹt ở ảnh con */
+}
+
+.avatar-option:hover {
+  transform: scale(1.08);
+}
+
+.avatar-option.selected {
+  border-color: var(--accent);
+  background: rgba(255, 201, 60, 0.18);
+}
+
 .error-text {
   color: var(--danger);
   font-size: 14px;
@@ -345,8 +395,22 @@ button.hidden {
   padding: 10px 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   font-weight: 600;
+}
+
+.player-list li span:first-of-type {
+  flex: 1; /* nickname chiếm hết khoảng trống còn lại, đẩy host-tag (nếu có) sang phải */
+  text-align: left;
+}
+
+.player-list-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 .player-list .host-tag {

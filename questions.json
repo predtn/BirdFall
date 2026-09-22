@@ -1,17 +1,302 @@
 [
   {
-    "question": "2 + 2 x 2 = ?",
-    "options": ["6", "8", "4", "10"],
-    "answerIndex": 0
+    "question": "Theo thông điệp xuyên suốt của bài, nếu pháp luật là luật chơi thì Nhà nước pháp quyền là khi luật chơi được áp dụng cho ai?",
+    "options": [
+      "Chỉ những người dân bình thường",
+      "cẢ người cầm còi",
+      "Chỉ các cơ quan tư pháp",
+      "Chỉ các doanh nghiệp lớn"
+    ],
+    "answerIndex": 1
   },
   {
-    "question": "Thủ đô của Việt Nam là gì?",
-    "options": ["Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Huế"],
-    "answerIndex": 0
-  },
-  {
-    "question": "Đây chỉ là câu hỏi mẫu, hãy tự soạn thêm trong questions.json",
-    "options": ["Ok", "Đồng ý", "Rõ", "Cả 3 đáp án trên"],
+    "question": "Tình huống “trọng tài vừa đá bóng, vừa tự tính điểm” minh họa điều gì?",
+    "options": [
+      "Cần có nhiều trọng tài hơn trong mỗi trận đấu",
+      "Luật chơi càng đơn giản thì càng dễ thực hiện",
+      "Đội mạnh nên được ưu tiên trong thi đấu",
+      "nGười có quyền thực thi luật cũng phải bị ràng buộc bởi luật"
+    ],
     "answerIndex": 3
+  },
+  {
+    "question": "Theo cách nói dễ nhớ trong bài, cốt lõi của Nhà nước pháp quyền là gì?",
+    "options": [
+      "qUyền lực được đặt trong khuôn khổ pháp luật và có cơ chế kiểm soát",
+      "Có thật nhiều bộ luật và văn bản pháp luật",
+      "Có bộ máy nhà nước đông đảo và hoạt động mạnh mẽ",
+      "Có hình phạt thật nghiêm khắc đối với mọi vi phạm"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "Theo bài, nhận định nào đúng về quyền lực nhà nước trong Nhà nước pháp quyền?",
+    "options": [
+      "Được thực hiện tùy ý trong mọi tình huống khẩn cấp",
+      "Chỉ cần kiểm soát khi người dân có yêu cầu",
+      "kHông được thực hiện tùy tiện và phải có cơ chế kiểm soát",
+      "Không cần giám sát nếu do cơ quan cấp cao thực hiện"
+    ],
+    "answerIndex": 2
+  },
+  {
+    "question": "Theo tinh thần “Rule of Law”, pháp luật được hiểu như thế nào?",
+    "options": [
+      "Pháp luật chỉ dùng để quản lý người dân",
+      "pHáp luật ràng buộc cả Nhà nước và người thực thi quyền lực, đồng thời bảo vệ các quyền cơ bản",
+      "Pháp luật chỉ có giá trị khi được ghi thành văn bản",
+      "Pháp luật là công cụ để nhà nước tăng cường quyền lực"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "“Rule by Law” có thể hiểu đơn giản là gì?",
+    "options": [
+      "sỬ dụng pháp luật như một công cụ để quản lý",
+      "Pháp luật đứng trên mọi chủ thể, kể cả Nhà nước",
+      "Pháp luật chỉ áp dụng cho người có quyền lực",
+      "Việc bãi bỏ các quy định pháp luật cũ"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "Vì sao “có luật” chưa đồng nghĩa với “có pháp quyền”?",
+    "options": [
+      "Vì luật luôn quá phức tạp để áp dụng",
+      "Vì mỗi quốc gia chỉ được có một số lượng luật nhất định",
+      "Vì luật chỉ có hiệu lực khi được toàn dân thuộc lòng",
+      "vÌ còn phải xét luật được xây dựng, áp dụng và kiểm soát quyền lực như thế nào"
+    ],
+    "answerIndex": 3
+  },
+  {
+    "question": "Quan điểm của bài về cách chia “phương Tây có pháp quyền, phương Đông không có” là gì?",
+    "options": [
+      "Hoàn toàn chính xác vì lịch sử đã chứng minh",
+      "Chỉ đúng với các nước phát triển",
+      "lÀ cách chia quá đơn giản, không nên hiểu như vậy",
+      "Chỉ đúng khi so sánh về hệ thống luật thành văn"
+    ],
+    "answerIndex": 2
+  },
+  {
+    "question": "Theo bài, nguyên nhân dẫn đến sự khác biệt về mô hình pháp luật và tổ chức quyền lực là gì?",
+    "options": [
+      "Do một bên có pháp luật, một bên không có pháp luật",
+      "dO điều kiện lịch sử, văn hóa và chính trị khác nhau",
+      "Do sự khác nhau về diện tích và dân số quốc gia",
+      "Do sự khác nhau về trình độ công nghệ"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "Về tư tưởng, một số khuynh hướng phương Tây thường nhấn mạnh điều gì?",
+    "options": [
+      "gIới hạn quyền lực nhà nước, quyền cá nhân và các cơ chế kiểm soát",
+      "Trật tự xã hội, cộng đồng và ổn định là trên hết",
+      "Xóa bỏ hoàn toàn vai trò của nhà nước",
+      "Ưu tiên mục tiêu phát triển hơn mọi giới hạn pháp lý"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "Một số mô hình phương Đông có thể nhấn mạnh điều gì, đồng thời cách tiếp cận này ra sao?",
+    "options": [
+      "Chỉ nhấn mạnh quyền cá nhân; các nước đều giống nhau",
+      "Chỉ nhấn mạnh phân quyền tuyệt đối; các nước đều giống nhau",
+      "Không coi trọng pháp luật; các nước đều giống nhau",
+      "tRật tự xã hội, cộng đồng, ổn định, phát triển; cách tiếp cận rất đa dạng"
+    ],
+    "answerIndex": 3
+  },
+  {
+    "question": "Về tổ chức quyền lực, nhiều mô hình phương Tây nhấn mạnh điều gì?",
+    "options": [
+      "Quyền lực tập trung vào một thiết chế duy nhất",
+      "Quyền lực không cần cơ chế kiểm tra, giám sát",
+      "pHân quyền, kiểm soát và đối trọng giữa các thiết chế",
+      "Quyền lực thuộc về từng cá nhân độc lập"
+    ],
+    "answerIndex": 2
+  },
+  {
+    "question": "Điểm chung giữa các mô hình Đông – Tây về Nhà nước pháp quyền theo bài là gì?",
+    "options": [
+      "Đều tổ chức quyền lực theo cùng một cách",
+      "qUyền lực không nên tùy tiện, cần có khuôn khổ pháp luật và cơ chế kiểm soát",
+      "Đều đặt ổn định xã hội lên trên pháp luật",
+      "Đều không cần bảo vệ quyền cá nhân"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "Ví dụ “đi ăn buffet” nhằm truyền tải thông điệp nào?",
+    "options": [
+      "mÔ hình tổ chức có thể khác nhau nhưng đã có luật thì người quản lý cũng phải tuân thủ",
+      "Mô hình quản lý tập trung luôn tốt hơn mô hình phân công",
+      "Mô hình phân công nhiều người quản lý luôn tốt hơn quản lý tập trung",
+      "Luật buffet chỉ áp dụng cho khách, không áp dụng cho người quản lý"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "Văn bản nào được nhắc đến để xác định các đặc trưng và nhiệm vụ xây dựng, hoàn thiện Nhà nước pháp quyền XHCN Việt Nam trong giai đoạn mới?",
+    "options": [
+      "Nghị quyết 22-NQ/TW",
+      "Nghị quyết 37-NQ/TW",
+      "Nghị quyết 45-NQ/TW",
+      "nGhị quyết 27-NQ/TW"
+    ],
+    "answerIndex": 3
+  },
+  {
+    "question": "Theo bài, Nhà nước pháp quyền XHCN Việt Nam được tổ chức và hoạt động theo nguyên tắc nào?",
+    "options": [
+      "Theo tập quán và truyền thống của từng địa phương",
+      "Theo quyết định của người đứng đầu từng cơ quan",
+      "tHeo Hiến pháp và pháp luật",
+      "Theo điều lệ nội bộ của từng cơ quan"
+    ],
+    "answerIndex": 2
+  },
+  {
+    "question": "Về quyền con người, quyền công dân, đặc trưng được nêu trong bài là gì?",
+    "options": [
+      "Chỉ ghi nhận trong Hiến pháp, không cần cơ chế bảo đảm",
+      "tÔn trọng, bảo đảm và bảo vệ quyền con người, quyền công dân",
+      "Chỉ bảo vệ khi không ảnh hưởng đến mục tiêu phát triển",
+      "Chỉ áp dụng cho công dân trong một số lĩnh vực nhất định"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "Theo Nghị quyết 27, quyền lực nhà nước ở Việt Nam có đặc điểm nào?",
+    "options": [
+      "tHống nhất, có phân công, phối hợp và kiểm soát giữa các cơ quan",
+      "Phân chia tuyệt đối, mỗi cơ quan hoạt động độc lập hoàn toàn",
+      "Thống nhất nên không cần kiểm soát",
+      "Chỉ có phân công mà không cần phối hợp"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "Quyền lực nhà nước thống nhất có nghĩa là không có kiểm soát quyền lực không?",
+    "options": [
+      "Đúng, vì thống nhất thì không cần kiểm soát",
+      "Đúng, vì kiểm soát sẽ làm quyền lực bị phân tán",
+      "kHông, vì quyền lực thống nhất nhưng có phân công, phối hợp và kiểm soát",
+      "Không, vì phải tách quyền lực thành các phần hoàn toàn độc lập"
+    ],
+    "answerIndex": 2
+  },
+  {
+    "question": "Ví dụ nhóm 4 người làm slide, trong đó một người tự chấm điểm nhóm mình được 10 điểm, cho thấy điều gì?",
+    "options": [
+      "Nhóm nên có nhiều thành viên hơn",
+      "Nên giao toàn bộ công việc cho người giỏi nhất",
+      "Nên bỏ chấm điểm để tránh tranh cãi",
+      "cẦn có phân công và cơ chế kiểm soát để tránh một người nắm hết quyền"
+    ],
+    "answerIndex": 3
+  },
+  {
+    "question": "Theo bài, hệ thống pháp luật trong Nhà nước pháp quyền XHCN Việt Nam cần được xây dựng như thế nào?",
+    "options": [
+      "Đồ sộ, chi tiết và ổn định tuyệt đối",
+      "đỒng bộ, công khai, minh bạch, khả thi",
+      "Linh hoạt, bảo mật và tập trung",
+      "Ngắn gọn, đơn giản và cố định"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "Việc “chỉ đợi tham nhũng xảy ra rồi mới xử lý” được ví giống với điều gì?",
+    "options": [
+      "cHữa bệnh sau khi bệnh đã phát sinh",
+      "Xây nhà mà không cần bản vẽ",
+      "Phòng bệnh bằng cách tăng cường tiêm chủng",
+      "Dừng trận đấu để đổi trọng tài"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "Theo bài, công tác phòng, chống tham nhũng cần bao gồm những khâu nào?",
+    "options": [
+      "Điều tra, truy tố, xét xử",
+      "Tuyên truyền, giáo dục, khen thưởng",
+      "pHòng ngừa, phát hiện, xử lý",
+      "Thanh tra, kiểm toán, thu hồi tài sản"
+    ],
+    "answerIndex": 2
+  },
+  {
+    "question": "Nhóm hoạt động nào sau đây thuộc khâu PHÁT HIỆN?",
+    "options": [
+      "Quy định rõ trách nhiệm và hạn chế xung đột lợi ích",
+      "kIểm tra, thanh tra, kiểm toán, giám sát, điều tra",
+      "Kỷ luật, truy tố, xét xử",
+      "Thu hồi tài sản và khắc phục hậu quả"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "Vụ án “Chuyến bay giải cứu” liên quan đến các hành vi nào?",
+    "options": [
+      "Rửa tiền và vận chuyển trái phép tiền tệ qua biên giới",
+      "Lừa đảo chiếm đoạt tài sản",
+      "Tham ô tài sản và vi phạm quy định về cho vay",
+      "đƯa hối lộ, nhận hối lộ, môi giới hối lộ và lợi dụng chức vụ, quyền hạn"
+    ],
+    "answerIndex": 3
+  },
+  {
+    "question": "Phiên sơ thẩm năm 2023 vụ “Chuyến bay giải cứu” tại TAND TP Hà Nội xét xử bao nhiêu bị cáo?",
+    "options": [
+      "54 Bị cáo",
+      "45 bị cáo",
+      "72 bị cáo",
+      "24 bị cáo"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "Ở vụ Vạn Thịnh Phát/SCB, giai đoạn 2 liên quan đến các tội danh nào?",
+    "options": [
+      "Tham ô tài sản, đưa hối lộ và vi phạm quy định về cho vay",
+      "lỪa đảo chiếm đoạt tài sản, rửa tiền và vận chuyển trái phép tiền tệ qua biên giới",
+      "Nhận hối lộ, môi giới hối lộ và lợi dụng chức vụ, quyền hạn",
+      "Buôn lậu, trốn thuế và vi phạm quy định về đấu thầu"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "Thông điệp chính khi kể vụ “Chuyến bay giải cứu” là gì?",
+    "options": [
+      "Cần ghi nhớ đầy đủ tên tất cả các bị cáo",
+      "Cần nhớ chính xác mức án của từng người",
+      "cẦn thấy vai trò của cơ chế phát hiện, điều tra, truy tố, xét xử khi quyền lực bị lạm dụng",
+      "Cần chứng minh mọi quy trình cấp phép đều có sai sót"
+    ],
+    "answerIndex": 2
+  },
+  {
+    "question": "Thông điệp rút ra từ vụ Vạn Thịnh Phát/SCB ở Slide 12 là gì?",
+    "options": [
+      "Chỉ cá nhân có chức vụ mới bị xử lý theo pháp luật",
+      "Chỉ hành vi gây thiệt hại vật chất mới bị xử lý",
+      "Vụ án kinh tế chỉ xử lý theo trình tự dân sự",
+      "nGười có quyền lực hoặc vị trí xã hội không nằm ngoài pháp luật"
+    ],
+    "answerIndex": 3
+  },
+  {
+    "question": "Câu kết của bài thuyết trình là gì?",
+    "options": [
+      "pHáp luật không chỉ để quản lý người dân, pháp luật còn để kiểm soát người có quyền lực.",
+      "Pháp luật chỉ có hiệu lực khi được toàn xã hội tự giác tuân thủ.",
+      "Pháp luật càng nhiều thì Nhà nước pháp quyền càng vững mạnh.",
+      "Pháp luật là công cụ quản lý hiệu quả nhất của nhà nước."
+    ],
+    "answerIndex": 0
   }
 ]

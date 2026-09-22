@@ -11,6 +11,7 @@ const Quiz = (() => {
   const questionEl = document.getElementById("quiz-question");
   const optionsEl = document.getElementById("quiz-options");
   const feedbackEl = document.getElementById("quiz-feedback");
+  const resultOverlayEl = document.getElementById("quiz-result-overlay");
   const resultImgEl = document.getElementById("quiz-result-img");
 
   const CORRECT_IMG = "assets/Faker.jpg";
@@ -18,11 +19,11 @@ const Quiz = (() => {
 
   function showResultImg(src) {
     resultImgEl.src = src;
-    resultImgEl.classList.remove("hidden");
+    resultOverlayEl.classList.remove("hidden");
   }
 
   function hideResultImg() {
-    resultImgEl.classList.add("hidden");
+    resultOverlayEl.classList.add("hidden");
     resultImgEl.src = "";
   }
 
