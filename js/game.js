@@ -911,6 +911,19 @@ const Game = (() => {
     }
   });
 
+  // Dọn "chim ma": nếu ai đó rời phòng giữa trận (F5, mất mạng, thoát tab) mà không kịp
+  // gửi trạng thái alive:false cuối cùng, chim của họ sẽ đứng yên vĩnh viễn trên màn hình
+  // người khác vì otherPlayers không có cơ chế tự dọn - room:state là nguồn sự thật cho
+  // danh sách người còn trong phòng, nên cứ mỗi lần nhận, xóa khỏi otherPlayers bất kỳ id
+  // nào không còn xuất hiện trong room.players nữa.
+  Network.on("room:state", (room) => {
+    if (!otherPlayers || !room || !room.players) return;
+    const stillInRoom = new Set(room.players.map((p) => p.id));
+    otherPlayers.forEach((_, id) => {
+      if (!stillInRoom.has(id)) otherPlayers.delete(id);
+    });
+  });
+
   function updateOtherPlayersInterpolation() {
     const renderTime = performance.now() - RENDER_DELAY_MS;
 
