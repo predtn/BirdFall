@@ -18,6 +18,7 @@ const Lobby = (() => {
     results: document.getElementById("results-screen"),
   };
   const hud = document.getElementById("hud");
+  const luckyBoxHudContainer = document.getElementById("lucky-box-hud-container");
 
   const nicknameInput = document.getElementById("nickname-input");
   const nicknameConfirmBtn = document.getElementById("nickname-confirm-btn");
@@ -239,6 +240,7 @@ const Lobby = (() => {
   Network.on("match:started", ({ seed, durationSec }) => {
     showOnly(null); // ẩn hết overlay (kể cả countdown) để lộ canvas game
     hud.classList.remove("hidden");
+    luckyBoxHudContainer.classList.remove("hidden");
     Game.startMultiplayer({ seed, durationSec, room: currentRoom });
   });
 
@@ -247,6 +249,7 @@ const Lobby = (() => {
     Game.stop();
     Audio_.playEnd();
     hud.classList.add("hidden");
+    luckyBoxHudContainer.classList.add("hidden");
     renderResults(results);
     showOnly("results");
   });
@@ -265,6 +268,20 @@ const Lobby = (() => {
         flagIcon.alt = "Đã đạt cờ MU";
         flagIcon.title = "Đã đạt cờ MU";
         nameSpan.appendChild(flagIcon);
+      }
+
+      if (r.luckyBoxCount > 0) {
+        const luckyBoxBadge = document.createElement("span");
+        luckyBoxBadge.className = "results-lucky-box-badge";
+        luckyBoxBadge.title = "Số lucky box đã nhặt";
+
+        const luckyBoxIcon = document.createElement("img");
+        luckyBoxIcon.src = "assets/lucky_box.png";
+        luckyBoxIcon.alt = "";
+        luckyBoxBadge.appendChild(luckyBoxIcon);
+        luckyBoxBadge.appendChild(document.createTextNode(`x${r.luckyBoxCount}`));
+
+        nameSpan.appendChild(luckyBoxBadge);
       }
 
       const scoreSpan = document.createElement("span");
@@ -307,6 +324,7 @@ const Lobby = (() => {
   Network.on("room:disbanded", () => {
     Game.stop();
     hud.classList.add("hidden");
+    luckyBoxHudContainer.classList.add("hidden");
     currentRoom = null;
     showOnly("menu");
     showToast("Tản giái");

@@ -253,6 +253,39 @@ button:active {
   background: rgba(150, 20, 10, 0.5);
 }
 
+#lucky-box-hud-container {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 5px 12px 5px 6px;
+  border-radius: 999px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#lucky-box-hud-container.hidden {
+  display: none;
+}
+
+.lucky-box-hud-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+#lucky-box-hud {
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  line-height: 1;
+}
+
 /* ----- Form nhập liệu (nickname, tạo/join phòng) ----- */
 input[type="text"],
 input[type="number"] {
@@ -496,6 +529,22 @@ button.hidden {
   width: auto;
   margin-left: 6px;
   vertical-align: middle;
+}
+
+.results-lucky-box-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffd54a;
+}
+
+.results-lucky-box-badge img {
+  height: 16px;
+  width: auto;
 }
 
 .results-list li::before {

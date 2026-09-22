@@ -90,6 +90,17 @@ const Game = (() => {
   const flagImg = new Image();
   flagImg.src = "assets/MU_flag.png";
 
+  // ----- Lucky box: 5 hộp quà trải đều theo map, X nằm giữa 1 cặp cột liền kề gần mốc %
+  // tương ứng, Y cố định sát trần/sát đất - đòi hỏi người chơi khéo léo né cột mới ăn được. -----
+  const LUCKY_BOX_PERCENTAGES = [0.1, 0.3, 0.5, 0.7, 0.9];
+  const LUCKY_BOX_SIZE = 53; // px hiển thị, to hơn 1/3 so với 40 gốc
+  const LUCKY_BOX_HITBOX_RADIUS = LUCKY_BOX_SIZE / 2;
+  let luckyBoxes = []; // [{ worldX, y, collected }]
+  let luckyBoxCount = 0; // số hộp đã nhặt trong trận hiện tại (persistent qua chết/hồi sinh)
+  const luckyBoxHud = document.getElementById("lucky-box-hud");
+  const luckyBoxImg = new Image();
+  luckyBoxImg.src = "assets/lucky_box.png";
+
   // ----- Avatar nhân vật -----
   // Hitbox (bird.radius) giữ nguyên không đổi; avatar vẽ to hơn 1 chút để nhìn rõ mặt,
   // người chơi vẫn né theo hitbox nhỏ hơn ẩn bên trong.
@@ -168,6 +179,42 @@ const Game = (() => {
     return result;
   }
 
+  // Sinh vị trí 5 lucky box, mỗi hộp đặt giữa 1 cặp cột liền kề gần mốc % tương ứng nhất
+  // (không phải đúng % tuyệt đối, vì X phải nằm giữa 2 cột). Y cố định sát trần/sát đất
+  // (xem bên dưới) - có thể chồng lên cột, đòi hỏi người chơi né cột đúng lúc mới ăn được.
+  function generateLuckyBoxes(fixedPipes) {
+    const totalLength = fixedPipes[fixedPipes.length - 1].worldX;
+    const boxes = [];
+
+    for (let boxIndex = 0; boxIndex < LUCKY_BOX_PERCENTAGES.length; boxIndex++) {
+      const pct = LUCKY_BOX_PERCENTAGES[boxIndex];
+      const targetX = pct * totalLength;
+
+      // Tìm cặp cột liền kề (before, after) mà targetX rơi vào khoảng giữa chúng
+      let pairIndex = 0;
+      for (let i = 0; i < fixedPipes.length - 1; i++) {
+        if (fixedPipes[i].worldX <= targetX) pairIndex = i;
+      }
+      const before = fixedPipes[pairIndex];
+      const after = fixedPipes[Math.min(pairIndex + 1, fixedPipes.length - 1)];
+
+      // Đặt hộp giữa khoảng trống ngang giữa 2 cột (sau mép phải cột trước, trước mép trái cột sau)
+      const leftEdge = before.worldX + PIPE_WIDTH;
+      const rightEdge = after.worldX;
+      const worldX = (leftEdge + rightEdge) / 2;
+
+      // Để buộc người chơi phải khéo léo lách qua cột mới ăn được: hộp đặt cố định cách
+      // trần 50px hoặc cách đất 50px (random 50/50 lên/xuống), KHÔNG kẹp theo khe hở cột -
+      // có thể chồng lên thân cột ở gần đó, người chơi phải né cột đúng lúc để lấy được.
+      const goUp = rand() < 0.5;
+      const y = goUp ? 70 : H - GROUND_HEIGHT - 50;
+
+      boxes.push({ boxIndex, worldX, y, collected: false });
+    }
+
+    return boxes;
+  }
+
   function resetRun() {
     bird = { y: H / 2, vy: 0, radius: 14 };
     score = 0;
@@ -215,6 +262,23 @@ const Game = (() => {
     }
   }
 
+  // Va chạm vật lý thật (hitbox tròn) với từng lucky box chưa nhặt. Chỉ có 5 hộp/map DÙNG
+  // CHUNG cho cả phòng - ai chạm trước thì hộp biến mất với TẤT CẢ mọi người. Ẩn ngay tại
+  // đây (optimistic, để không có độ trễ hình ảnh chờ mạng), nhưng chỉ cộng điểm HUD khi
+  // server xác nhận qua "player:luckyBoxCollected" (tránh cộng nhầm nếu người khác lấy trước).
+  function checkLuckyBoxCollision(birdWorldX) {
+    for (const box of luckyBoxes) {
+      if (box.collected) continue;
+      const dx = birdWorldX - box.worldX;
+      const dy = bird.y - box.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance < bird.radius + LUCKY_BOX_HITBOX_RADIUS) {
+        box.collected = true; // ẩn ngay cục bộ, không chờ xác nhận server
+        Network.collectLuckyBox(box.boxIndex);
+      }
+    }
+  }
+
   function update(dt) {
     updateTimerHud();
     updateOtherPlayersInterpolation();
@@ -236,6 +300,7 @@ const Game = (() => {
 
     updateGloryProximity(birdWorldX);
     checkFlagCollision(birdWorldX);
+    checkLuckyBoxCollision(birdWorldX);
 
     for (const pipe of pipes) {
       if (!pipe.passed && pipe.worldX + PIPE_WIDTH < birdWorldX - bird.radius) {
@@ -368,6 +433,7 @@ const Game = (() => {
     drawClouds();
     drawPipes();
     drawGloryLogos();
+    drawLuckyBoxes();
     drawGround();
     drawOtherBirds();
     const dyingAngle = state === "dying" ? deathAnimElapsed * DEATH_SPIN_SPEED : undefined;
@@ -390,6 +456,24 @@ const Game = (() => {
         logoY - GLORY_LOGO_SIZE / 2,
         GLORY_LOGO_SIZE,
         GLORY_LOGO_SIZE
+      );
+    }
+  }
+
+  // Vẽ 5 lucky box chưa nhặt, dùng chung công thức camera với cột/logo.
+  function drawLuckyBoxes() {
+    if (!luckyBoxImg.complete || luckyBoxImg.naturalWidth === 0) return;
+
+    for (const box of luckyBoxes) {
+      if (box.collected) continue;
+      const screenX = box.worldX - worldOffset;
+      if (screenX < -LUCKY_BOX_SIZE - VIEW_MARGIN || screenX > W + VIEW_MARGIN) continue;
+      ctx.drawImage(
+        luckyBoxImg,
+        screenX - LUCKY_BOX_SIZE / 2,
+        box.y - LUCKY_BOX_SIZE / 2,
+        LUCKY_BOX_SIZE,
+        LUCKY_BOX_SIZE
       );
     }
   }
@@ -815,6 +899,18 @@ const Game = (() => {
     if (p) p.hasFlag = true;
   });
 
+  // Server xác nhận 1 lucky box đã được ai đó nhặt (chỉ 5 hộp DÙNG CHUNG cho cả phòng) -
+  // ẩn hộp đó với TẤT CẢ mọi người (kể cả người chưa kịp bay tới), và chỉ cộng điểm HUD
+  // nếu chính mình là người server xác nhận đã nhặt (winnerId === Network.id).
+  Network.on("player:luckyBoxCollected", ({ boxIndex, winnerId }) => {
+    const box = luckyBoxes[boxIndex];
+    if (box) box.collected = true;
+    if (winnerId === Network.id) {
+      luckyBoxCount++;
+      luckyBoxHud.textContent = String(luckyBoxCount);
+    }
+  });
+
   function updateOtherPlayersInterpolation() {
     const renderTime = performance.now() - RENDER_DELAY_MS;
 
@@ -891,6 +987,10 @@ const Game = (() => {
     gloryLogoWorldXs = GLORY_LOGO_PERCENTAGES.map((pct) => estimatedPipeCount * pct * PIPE_SPACING);
     Audio_.stopGlory();
     hasFlag = false;
+
+    luckyBoxes = generateLuckyBoxes(pipes);
+    luckyBoxCount = 0;
+    luckyBoxHud.textContent = "0";
 
     otherPlayers = new Map();
     myAvatarId = 1;

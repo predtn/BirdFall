@@ -23,6 +23,7 @@ const Network = (() => {
   socket.on("player:update", (data) => emitLocal("player:update", data));
   socket.on("player:scoreUpdate", (data) => emitLocal("player:scoreUpdate", data));
   socket.on("player:flagEarned", (data) => emitLocal("player:flagEarned", data));
+  socket.on("player:luckyBoxCollected", (data) => emitLocal("player:luckyBoxCollected", data));
 
   function createRoom(nickname, roomName, durationSec, maxPlayers, avatarId) {
     return new Promise((resolve) => {
@@ -64,6 +65,10 @@ const Network = (() => {
     socket.emit("player:earnFlag");
   }
 
+  function collectLuckyBox(boxIndex) {
+    socket.emit("player:collectLuckyBox", { boxIndex });
+  }
+
   return {
     get id() {
       return socket.id;
@@ -78,5 +83,6 @@ const Network = (() => {
     sendPlayerState,
     sendScore,
     earnFlag,
+    collectLuckyBox,
   };
 })();

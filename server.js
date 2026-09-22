@@ -57,6 +57,7 @@ function sanitizeNickname(name) {
 }
 
 const AVATAR_COUNT = 10; // khớp đúng số file assets/avt_1.png .. avt_10.png
+const LUCKY_BOX_TOTAL = 5; // khớp đúng số lucky box sinh ra mỗi trận (xem LUCKY_BOX_PERCENTAGES ở client)
 
 function sanitizeAvatarId(id) {
   const n = Math.round(Number(id));
@@ -101,7 +102,13 @@ function endMatch(room) {
   room.state = "finished";
 
   const results = [...room.players.entries()]
-    .map(([id, p]) => ({ id, nickname: p.nickname, score: p.score, hasFlag: !!p.hasFlag }))
+    .map(([id, p]) => ({
+      id,
+      nickname: p.nickname,
+      score: p.score,
+      hasFlag: !!p.hasFlag,
+      luckyBoxCount: p.luckyBoxCount || 0,
+    }))
     .sort((a, b) => b.score - a.score);
 
   io.to(room.code).emit("match:ended", { results });
@@ -130,10 +137,12 @@ function startMatch(room) {
   room.state = "playing";
   room.seed = Math.floor(Math.random() * 2 ** 31);
   room.startedAt = Date.now();
+  room.collectedBoxIndexes = new Set(); // chỉ 5 hộp DÙNG CHUNG cho cả phòng, reset mỗi trận mới
   for (const p of room.players.values()) {
     p.score = 0;
     p.alive = true;
     p.hasFlag = false; // reset mỗi trận mới
+    p.luckyBoxCount = 0;
   }
 
   io.to(room.code).emit("match:started", {
@@ -188,6 +197,7 @@ io.on("connection", (socket) => {
       score: 0,
       alive: true,
       hasFlag: false,
+      luckyBoxCount: 0,
       worldOffset: 0,
       y: 320,
       vy: 0,
@@ -223,6 +233,7 @@ io.on("connection", (socket) => {
       score: 0,
       alive: true,
       hasFlag: false,
+      luckyBoxCount: 0,
       worldOffset: 0,
       y: 320,
       vy: 0,
@@ -315,6 +326,24 @@ io.on("connection", (socket) => {
     if (!p || p.hasFlag) return;
     p.hasFlag = true;
     io.to(room.code).emit("player:flagEarned", { id: socket.id });
+  });
+
+  // Lucky box: chỉ 5 hộp DÙNG CHUNG cho cả phòng (không phải riêng từng người) - server làm
+  // trọng tài theo boxIndex, ai chạm trước thì thắng, những người chạm sau (dù optimistic đã
+  // ẩn cục bộ ở client) không được cộng điểm. Broadcast cho CẢ phòng để hộp biến mất với
+  // mọi người ngay lập tức, không chỉ người thắng.
+  socket.on("player:collectLuckyBox", ({ boxIndex }) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || room.state !== "playing") return;
+    const p = room.players.get(socket.id);
+    if (!p) return;
+    const index = Number(boxIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= LUCKY_BOX_TOTAL) return;
+    if (room.collectedBoxIndexes.has(index)) return; // đã có người khác nhặt trước, bỏ qua
+
+    room.collectedBoxIndexes.add(index);
+    p.luckyBoxCount = (p.luckyBoxCount || 0) + 1;
+    io.to(room.code).emit("player:luckyBoxCollected", { boxIndex: index, winnerId: socket.id });
   });
 
   socket.on("disconnect", () => {
