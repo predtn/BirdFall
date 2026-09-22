@@ -286,6 +286,52 @@ button:active {
   line-height: 1;
 }
 
+/* ----- Feed thông báo sự kiện (chết/nhặt quà/easter egg), góc trên bên trái ----- */
+#event-feed {
+  position: absolute;
+  top: 54px;
+  left: 14px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#event-feed.hidden {
+  display: none;
+}
+
+.event-feed-item {
+  font-family: "Nunito", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+.event-feed-item.fade-out {
+  opacity: 0;
+}
+
+.event-feed-item.event-death {
+  color: #ffb3a0;
+}
+
+.event-feed-item.event-lucky-box {
+  color: #ffd54a;
+}
+
+.event-feed-item.event-flag {
+  color: #ff4d4d;
+}
+
 /* ----- Form nhập liệu (nickname, tạo/join phòng) ----- */
 input[type="text"],
 input[type="number"] {

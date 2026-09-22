@@ -101,6 +101,22 @@ const Game = (() => {
   const luckyBoxImg = new Image();
   luckyBoxImg.src = "assets/lucky_box.png";
 
+  // ----- Feed thông báo sự kiện (chết/nhặt quà/chạm easter egg MU), góc trên trái -----
+  const EVENT_FEED_DURATION_MS = 3000;
+  const eventFeedEl = document.getElementById("event-feed");
+  let myNickname = "Bạn"; // set trong startMultiplayer() từ room.players
+
+  function pushEventFeed(text, cssClass) {
+    const item = document.createElement("div");
+    item.className = `event-feed-item ${cssClass}`;
+    item.textContent = text;
+    eventFeedEl.appendChild(item);
+    setTimeout(() => {
+      item.classList.add("fade-out");
+      setTimeout(() => item.remove(), 400); // đợi hết transition opacity rồi mới gỡ khỏi DOM
+    }, EVENT_FEED_DURATION_MS);
+  }
+
   // ----- Avatar nhân vật -----
   // Hitbox (bird.radius) giữ nguyên không đổi; avatar vẽ to hơn 1 chút để nhìn rõ mặt,
   // người chơi vẫn né theo hitbox nhỏ hơn ẩn bên trong.
@@ -366,6 +382,7 @@ const Game = (() => {
       deathStartVy: bird.vy,
     });
     Audio_.playDie();
+    pushEventFeed(`${myNickname} đã chết vì ngu`, "event-death");
   }
 
   function updateDeathAnimation(dt) {
@@ -864,6 +881,7 @@ const Game = (() => {
     // thay vào đó lưu mốc bắt đầu để tự tính lại animation xoay+rơi cục bộ (xem drawOtherBirds).
     if (dying) {
       if (existing) {
+        if (!existing.dying) pushEventFeed(`${existing.nickname} đã chết vì ngu`, "event-death");
         existing.dying = true;
         existing.deathAnimStartClientTime = performance.now();
         existing.deathStartY = deathStartY;
@@ -894,17 +912,19 @@ const Game = (() => {
   });
 
   // Người khác vừa đạt cờ MU -> đánh dấu để vẽ cờ trên đầu họ, giữ nguyên suốt trận.
-  Network.on("player:flagEarned", ({ id }) => {
+  Network.on("player:flagEarned", ({ id, nickname }) => {
     const p = otherPlayers.get(id);
     if (p) p.hasFlag = true;
+    pushEventFeed(`${id === Network.id ? myNickname : nickname} đã vào hang`, "event-flag");
   });
 
   // Server xác nhận 1 lucky box đã được ai đó nhặt (chỉ 5 hộp DÙNG CHUNG cho cả phòng) -
   // ẩn hộp đó với TẤT CẢ mọi người (kể cả người chưa kịp bay tới), và chỉ cộng điểm HUD
   // nếu chính mình là người server xác nhận đã nhặt (winnerId === Network.id).
-  Network.on("player:luckyBoxCollected", ({ boxIndex, winnerId }) => {
+  Network.on("player:luckyBoxCollected", ({ boxIndex, winnerId, winnerNickname }) => {
     const box = luckyBoxes[boxIndex];
     if (box) box.collected = true;
+    pushEventFeed(`${winnerId === Network.id ? myNickname : winnerNickname} đã được chương trình bố thí quà`, "event-lucky-box");
     if (winnerId === Network.id) {
       luckyBoxCount++;
       luckyBoxHud.textContent = String(luckyBoxCount);
@@ -1004,6 +1024,7 @@ const Game = (() => {
     luckyBoxes = generateLuckyBoxes(pipes);
     luckyBoxCount = 0;
     luckyBoxHud.textContent = "0";
+    eventFeedEl.innerHTML = ""; // dọn feed sự kiện của trận trước (kể cả khi "Chơi lại")
 
     otherPlayers = new Map();
     myAvatarId = 1;
@@ -1011,6 +1032,7 @@ const Game = (() => {
       room.players.forEach((p) => {
         if (p.id === Network.id) {
           myAvatarId = p.avatarId || 1;
+          myNickname = p.nickname || "Bạn";
         } else {
           otherPlayers.set(p.id, {
             nickname: p.nickname,

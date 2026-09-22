@@ -19,6 +19,7 @@ const Lobby = (() => {
   };
   const hud = document.getElementById("hud");
   const luckyBoxHudContainer = document.getElementById("lucky-box-hud-container");
+  const eventFeed = document.getElementById("event-feed");
 
   const nicknameInput = document.getElementById("nickname-input");
   const nicknameConfirmBtn = document.getElementById("nickname-confirm-btn");
@@ -241,6 +242,7 @@ const Lobby = (() => {
     showOnly(null); // ẩn hết overlay (kể cả countdown) để lộ canvas game
     hud.classList.remove("hidden");
     luckyBoxHudContainer.classList.remove("hidden");
+    eventFeed.classList.remove("hidden");
     Game.startMultiplayer({ seed, durationSec, room: currentRoom });
   });
 
@@ -250,6 +252,7 @@ const Lobby = (() => {
     Audio_.playEnd();
     hud.classList.add("hidden");
     luckyBoxHudContainer.classList.add("hidden");
+    eventFeed.classList.add("hidden");
     renderResults(results);
     showOnly("results");
   });
@@ -325,6 +328,7 @@ const Lobby = (() => {
     Game.stop();
     hud.classList.add("hidden");
     luckyBoxHudContainer.classList.add("hidden");
+    eventFeed.classList.add("hidden");
     currentRoom = null;
     showOnly("menu");
     showToast("Tản giái");

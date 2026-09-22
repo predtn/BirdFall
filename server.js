@@ -325,7 +325,7 @@ io.on("connection", (socket) => {
     const p = room.players.get(socket.id);
     if (!p || p.hasFlag) return;
     p.hasFlag = true;
-    io.to(room.code).emit("player:flagEarned", { id: socket.id });
+    io.to(room.code).emit("player:flagEarned", { id: socket.id, nickname: p.nickname });
   });
 
   // Lucky box: chỉ 5 hộp DÙNG CHUNG cho cả phòng (không phải riêng từng người) - server làm
@@ -343,7 +343,7 @@ io.on("connection", (socket) => {
 
     room.collectedBoxIndexes.add(index);
     p.luckyBoxCount = (p.luckyBoxCount || 0) + 1;
-    io.to(room.code).emit("player:luckyBoxCollected", { boxIndex: index, winnerId: socket.id });
+    io.to(room.code).emit("player:luckyBoxCollected", { boxIndex: index, winnerId: socket.id, winnerNickname: p.nickname });
   });
 
   socket.on("disconnect", () => {
