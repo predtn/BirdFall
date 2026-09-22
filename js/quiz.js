@@ -15,7 +15,7 @@ const Quiz = (() => {
   const resultImgEl = document.getElementById("quiz-result-img");
 
   const CORRECT_IMG = "assets/Faker.jpg";
-  const WRONG_IMGS = ["assets/wrong_1.jpg", "assets/wrong_2.png"];
+  const WRONG_IMGS = ["assets/wrong_1.jpg", "assets/wrong_2.png", "assets/wrong_3.png", "assets/wrong_4.png"];
 
   function showResultImg(src) {
     resultImgEl.src = src;

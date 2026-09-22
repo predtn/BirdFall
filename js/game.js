@@ -23,7 +23,7 @@ const Game = (() => {
   const MAX_FALL_SPEED = 10 * SCALE * REFERENCE_FPS; // px/s (gốc: 10 px/frame)
   const PIPE_GAP = Math.round(100 * SCALE); // px (gốc: 100px @288px rộng)
   const PIPE_WIDTH = 62;
-  const PIPE_SPEED = 3 * 0.85 * 0.85 * SCALE * REFERENCE_FPS; // px/s (gốc: 3 px/frame, giảm tiết tấu ~28%)
+  const PIPE_SPEED = 3 * 0.85 * 0.85 * 0.85 * SCALE * REFERENCE_FPS; // px/s (gốc: 3 px/frame, giảm tiết tấu ~39%)
   const PIPE_SPACING = Math.round(200 * SCALE); // px (gốc: 200px @288px rộng)
   const QUIZ_EVERY_N_PIPES = 3;
   const MAX_DT = 1 / 30; // tránh giật lag khi tab bị treo/đổi tab
@@ -75,9 +75,9 @@ const Game = (() => {
   // tính trong startMultiplayer) - không phải % map dự phòng (dài gấp 1.5 lần để chịu được
   // chết/hồi sinh nhiều lần), vì theo % map dự phòng logo sẽ nằm quá xa, không ai tới được.
   // Nhạc glory dài ~18s không loop; GLORY_RANGE tính để fade in+out vừa khít trong đó.
-  const GLORY_LOGO_PERCENTAGES = [0.2, 0.6];
+  const GLORY_LOGO_PERCENTAGES = [0.15, 0.5];
   const GLORY_RANGE = 1600; // px mỗi bên logo, trong khoảng này crossfade dần
-  const GLORY_LOGO_SIZE = 64;
+  const GLORY_LOGO_SIZE = 85; // 2/3 của 128, FLAG_HITBOX_RADIUS bên dưới tự scale theo
   let gloryLogoWorldXs = []; // worldX tuyệt đối của từng logo, tính 1 lần khi bắt đầu trận
   const gloryLogoImg = new Image();
   gloryLogoImg.src = "assets/MU.png";
@@ -284,11 +284,22 @@ const Game = (() => {
 
   function handleDeath() {
     // worldOffset đứng yên khi chết; người khác vẫn interpolate theo world offset thật
-    // của họ nên vẫn thấy họ "trôi qua".
+    // của họ nên vẫn thấy họ "trôi qua". dying=true + deathStartY/deathStartVy cho người
+    // khác tự tính lại animation xoay+rơi bằng công thức vật lý đóng (xem drawOtherBirds),
+    // không cần server gửi update liên tục trong lúc chết.
     state = "dying";
     deathAnimElapsed = 0;
     bird.vy = DEATH_BOUNCE_VELOCITY;
-    Network.sendPlayerState({ worldOffset, y: bird.y, vy: bird.vy, angle: 0, alive: false });
+    Network.sendPlayerState({
+      worldOffset,
+      y: bird.y,
+      vy: bird.vy,
+      angle: 0,
+      alive: false,
+      dying: true,
+      deathStartY: bird.y,
+      deathStartVy: bird.vy,
+    });
     Audio_.playDie();
   }
 
@@ -565,6 +576,10 @@ const Game = (() => {
 
   function drawOtherBirds() {
     otherPlayers.forEach((p) => {
+      if (p.dying) {
+        drawDyingOtherBird(p);
+        return;
+      }
       if (!p.alive) return;
       // p.renderWorldX đã bao gồm +90, cùng quy ước birdWorldX = worldOffset + 90 -> screenX = renderWorldX - worldOffset
       const screenX = p.renderWorldX - worldOffset;
@@ -575,6 +590,29 @@ const Game = (() => {
         drawOffscreenIndicator(screenX, p.renderY, p.avatarId);
       }
     });
+  }
+
+  // Vẽ animation chết kiểu Mario cho người chơi khác: dùng công thức vật lý đóng
+  // (y = y0 + v0*t + 0.5*a*t², vy = v0 + a*t) để tự tính lại vị trí/góc xoay cục bộ
+  // từ mốc deathAnimStartClientTime, không cần server gửi update liên tục lúc chết.
+  function drawDyingOtherBird(p) {
+    const elapsed = (performance.now() - p.deathAnimStartClientTime) / 1000;
+    if (elapsed >= DEATH_ANIM_MAX_DURATION) {
+      p.dying = false;
+      return;
+    }
+
+    const y = p.deathStartY + p.deathStartVy * elapsed + 0.5 * DEATH_GRAVITY * elapsed * elapsed;
+    if (y - bird.radius > H) {
+      p.dying = false;
+      return;
+    }
+
+    const screenX = p.deathWorldX - worldOffset;
+    const angle = elapsed * DEATH_SPIN_SPEED;
+    if (screenX >= -VIEW_MARGIN && screenX <= W + VIEW_MARGIN) {
+      drawBird({ x: screenX, y, vy: 0 }, false, p.nickname, angle, p.hasFlag, p.avatarId);
+    }
   }
 
   // screenX < 0 -> họ ở phía sau -> dán mép trái. screenX > W -> phía trước -> dán mép phải.
@@ -733,15 +771,29 @@ const Game = (() => {
   const RENDER_DELAY_MS = 100;
   const MAX_BUFFER_SIZE = 30; // ~2 giây dữ liệu ở tần suất gửi hiện tại
 
-  Network.on("player:update", ({ id, worldOffset: theirWorldOffset, y, vy, angle, alive }) => {
+  Network.on("player:update", ({ id, worldOffset: theirWorldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy }) => {
     const existing = otherPlayers.get(id);
     const worldX = theirWorldOffset + 90;
     const snapshot = { t: performance.now(), worldX, y, vy };
+
+    // dying=true -> không đưa vào buffer interpolation bình thường (họ đứng yên khi chết),
+    // thay vào đó lưu mốc bắt đầu để tự tính lại animation xoay+rơi cục bộ (xem drawOtherBirds).
+    if (dying) {
+      if (existing) {
+        existing.dying = true;
+        existing.deathAnimStartClientTime = performance.now();
+        existing.deathStartY = deathStartY;
+        existing.deathStartVy = deathStartVy;
+        existing.deathWorldX = worldX;
+      }
+      return;
+    }
 
     if (existing) {
       existing.buffer.push(snapshot);
       if (existing.buffer.length > MAX_BUFFER_SIZE) existing.buffer.shift();
       existing.alive = alive;
+      existing.dying = false;
     } else {
       otherPlayers.set(id, {
         nickname: "?",
@@ -751,6 +803,7 @@ const Game = (() => {
         renderY: y,
         renderVy: vy,
         alive,
+        dying: false,
         hasFlag: false,
       });
     }
@@ -854,6 +907,7 @@ const Game = (() => {
             renderY: H / 2,
             renderVy: 0,
             alive: true,
+            dying: false,
             hasFlag: !!p.hasFlag,
           });
         }

@@ -491,6 +491,13 @@ button.hidden {
   font-weight: 600;
 }
 
+.results-flag-icon {
+  height: 18px;
+  width: auto;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
 .results-list li::before {
   content: counter(rank);
   width: 26px;

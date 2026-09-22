@@ -101,7 +101,7 @@ function endMatch(room) {
   room.state = "finished";
 
   const results = [...room.players.entries()]
-    .map(([id, p]) => ({ id, nickname: p.nickname, score: p.score }))
+    .map(([id, p]) => ({ id, nickname: p.nickname, score: p.score, hasFlag: !!p.hasFlag }))
     .sort((a, b) => b.score - a.score);
 
   io.to(room.code).emit("match:ended", { results });
@@ -274,7 +274,7 @@ io.on("connection", (socket) => {
 
   // Broadcast vị trí chim cho cả phòng trừ người gửi. worldOffset = quãng đường đã bay
   // trên map cố định (không phải x màn hình, luôn = 90).
-  socket.on("player:state", ({ worldOffset, y, vy, angle, alive }) => {
+  socket.on("player:state", ({ worldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy }) => {
     const room = rooms.get(socket.data.roomCode);
     if (!room || room.state !== "playing") return;
     const p = room.players.get(socket.id);
@@ -285,7 +285,17 @@ io.on("connection", (socket) => {
     p.angle = angle;
     p.alive = alive;
 
-    socket.to(room.code).emit("player:update", { id: socket.id, worldOffset, y, vy, angle, alive });
+    socket.to(room.code).emit("player:update", {
+      id: socket.id,
+      worldOffset,
+      y,
+      vy,
+      angle,
+      alive,
+      dying,
+      deathStartY,
+      deathStartVy,
+    });
   });
 
   socket.on("player:score", ({ score }) => {

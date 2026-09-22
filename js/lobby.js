@@ -257,6 +257,16 @@ const Lobby = (() => {
       const li = document.createElement("li");
       const nameSpan = document.createElement("span");
       nameSpan.textContent = r.id === Network.id ? `${r.nickname} (bạn)` : r.nickname;
+
+      if (r.hasFlag) {
+        const flagIcon = document.createElement("img");
+        flagIcon.className = "results-flag-icon";
+        flagIcon.src = "assets/MU_flag.png";
+        flagIcon.alt = "Đã đạt cờ MU";
+        flagIcon.title = "Đã đạt cờ MU";
+        nameSpan.appendChild(flagIcon);
+      }
+
       const scoreSpan = document.createElement("span");
       scoreSpan.className = "player-score";
       scoreSpan.textContent = r.score;
