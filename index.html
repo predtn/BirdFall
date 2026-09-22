@@ -76,7 +76,7 @@
 
     <!-- Chết trong trận: thông báo + đếm ngược hồi sinh -->
     <div id="death-screen" class="overlay hidden">
-      <h1>💥 Bạn đã chết!</h1>
+      <h1>U DIED!</h1>
       <p>Hồi sinh sau...</p>
       <div id="death-countdown-number">3</div>
     </div>
@@ -87,6 +87,7 @@
         <h2 id="quiz-question">Câu hỏi?</h2>
         <div id="quiz-options"></div>
         <p id="quiz-feedback"></p>
+        <img id="quiz-result-img" class="hidden" alt="">
       </div>
     </div>
 
@@ -114,6 +115,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/network.js"></script>
   <script src="js/rng.js"></script>
+  <script src="js/audio.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/game.js"></script>
   <script src="js/lobby.js"></script>

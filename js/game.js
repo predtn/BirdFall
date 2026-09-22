@@ -35,6 +35,16 @@ const Game = (() => {
   const PATTERN_CYCLE = ["easy", "normal", "hard", "zigzag"]; // lặp lại theo vòng, cứ ~4 cụm có 1 cụm "cao trào"
   const NETWORK_SEND_INTERVAL = 1 / 20; // gửi vị trí chim của mình ~20 lần/giây (tăng từ 15 để buffered interpolation có nhiều điểm dữ liệu hơn, mượt hơn)
 
+  // ----- Hiệu ứng chết kiểu Mario -----
+  // Khi chết: chim bật ngược lên 1 phát (giống nhân vật Mario chết), rồi rơi thẳng
+  // xuống với gia tốc mạnh hơn bình thường trong lúc xoay tròn liên tục, biến mất khỏi
+  // đáy màn hình trước khi hiện overlay đếm ngược hồi sinh. Thế giới (cột/người khác/
+  // camera) vẫn tiếp tục chạy bình thường trong lúc này, chỉ riêng chim của mình rơi.
+  const DEATH_BOUNCE_VELOCITY = -6 * SCALE * REFERENCE_FPS; // px/s, lực bật lên tức thời lúc vừa chết
+  const DEATH_GRAVITY = GRAVITY * 1.6; // rơi nhanh hơn bình thường một chút cho kịch tính
+  const DEATH_SPIN_SPEED = 10; // rad/giây, tốc độ xoay tròn liên tục trong lúc rơi
+  const DEATH_ANIM_MAX_DURATION = 1.2; // giây, ngưỡng an toàn tối đa trước khi ép chuyển sang màn hình hồi sinh dù chưa rơi khỏi màn hình
+
   let bird;
   let pipes; // map CỐ ĐỊNH, sinh 1 lần khi bắt đầu trận, mỗi cột có worldX tuyệt đối không đổi
   let score; // điểm của lượt chơi hiện tại (reset về 0 mỗi khi chết trong trận)
@@ -42,7 +52,8 @@ const Game = (() => {
   let pipesSincePipeQuiz;
   let frame;
   let worldOffset; // quãng đường (px) mà CHÍNH MÌNH đã bay được kể từ đầu lượt chơi hiện tại -> dùng làm camera
-  let state; // "idle" | "playing" | "quiz" | "dead"
+  let state; // "idle" | "playing" | "quiz" | "dying" | "dead"
+  let deathAnimElapsed; // thời gian (giây) đã trôi qua trong animation chết kiểu Mario, dùng để tính spin/rơi
   let rand; // seeded RNG dùng chung, đồng bộ giữa mọi người chơi trong phòng (chỉ dùng lúc sinh map 1 lần)
   let matchEndAt; // timestamp (ms) khi trận kết thúc
   let networkSendTimer;
@@ -63,6 +74,21 @@ const Game = (() => {
   const OFFSCREEN_ICON_MAX_SCALE = 1; // scale khi vừa ra khỏi tầm nhìn (kích thước gần bằng chim thật)
   const OFFSCREEN_ICON_MIN_SCALE = 0.5; // scale tối thiểu khi ở rất xa, không nhỏ hơn nữa để vẫn nhìn rõ được
   const OFFSCREEN_ICON_FALLOFF_DISTANCE = 1200; // khoảng cách (px) để scale giảm từ MAX xuống MIN
+
+  // ----- Easter egg logo MU + nhạc "glory glory" crossfade -----
+  // Logo xuất hiện tại cột thứ 40%/80% trong số cột mà 1 người bay LIÊN TỤC KHÔNG CHẾT
+  // thực sự vượt qua được trong đúng thời gian trận (không phải % của map dự phòng dài
+  // hơn nhiều dùng để tránh hết cột khi có người chết/hồi sinh nhiều lần - map dự phòng
+  // đó dài gấp 1.5 lần, nếu đặt logo theo % của nó thì logo sẽ nằm quá xa, gần như không
+  // ai tới được trong 1 trận thật). estimatedPipeCount tính trong startMultiplayer().
+  // File nhạc glory dài ~18s (không loop), GLORY_RANGE tính sao cho tổng thời gian đi qua
+  // CẢ vùng (fade in + fade out) vừa khít, dư margin an toàn: 2*(1600/PIPE_SPEED)≈14.76s.
+  const GLORY_LOGO_PERCENTAGES = [0.2, 0.6]; // % số cột thực tế bay được trong trận
+  const GLORY_RANGE = 1600; // px mỗi bên logo - trong khoảng này thì crossfade dần
+  const GLORY_LOGO_SIZE = 64; // px, kích thước hiển thị logo trên canvas
+  let gloryLogoWorldXs = []; // worldX tuyệt đối của từng logo, tính 1 lần khi bắt đầu trận
+  const gloryLogoImg = new Image();
+  gloryLogoImg.src = "assets/MU.png";
 
   // ----- Sinh map cố định 1 lần khi bắt đầu trận -----
   // Map dài đủ để phủ hết thời gian trận đấu + rơi lại từ đầu nhiều lần (người chơi
@@ -146,12 +172,32 @@ const Game = (() => {
   function flap() {
     if (state === "playing") {
       bird.vy = FLAP_VELOCITY;
+      Audio_.playJump(); // chỉ trigger cho input cục bộ của chính mình, không liên quan người chơi khác
     }
+  }
+
+  // Tính proximity (0..1) tới logo MU gần nhất trong tầm ảnh hưởng, dựa trên vị trí THẬT
+  // của CHÍNH MÌNH trên map (birdWorldX) - hoàn toàn không liên quan tới người chơi khác,
+  // nên chỉ mình nghe crossfade glory glory khi chính mình tới gần logo.
+  function updateGloryProximity(birdWorldX) {
+    let bestProximity = 0;
+    for (const logoX of gloryLogoWorldXs) {
+      const distance = Math.abs(birdWorldX - logoX);
+      if (distance >= GLORY_RANGE) continue;
+      const proximity = 1 - distance / GLORY_RANGE; // 0 ở biên vùng, 1 đúng tại logo
+      if (proximity > bestProximity) bestProximity = proximity;
+    }
+    Audio_.updateGloryProximity(bestProximity);
   }
 
   function update(dt) {
     updateTimerHud();
     updateOtherPlayersInterpolation();
+
+    if (state === "dying") {
+      updateDeathAnimation(dt);
+      return;
+    }
 
     if (state !== "playing") return;
     frame++;
@@ -162,6 +208,8 @@ const Game = (() => {
 
     worldOffset += PIPE_SPEED * dt;
     const birdWorldX = worldOffset + 90; // vị trí thật của chim trên map cố định (90 = x hiển thị trên màn hình)
+
+    updateGloryProximity(birdWorldX);
 
     for (const pipe of pipes) {
       if (!pipe.passed && pipe.worldX + PIPE_WIDTH < birdWorldX - bird.radius) {
@@ -176,6 +224,9 @@ const Game = (() => {
 
         if (pipesSincePipeQuiz >= QUIZ_EVERY_N_PIPES) {
           pipesSincePipeQuiz = 0;
+          // Quiz hiện lên KHÔNG tắt/pause glory glory - nhạc (nếu đang phát) tiếp tục
+          // chạy xuyên suốt popup quiz, vì worldOffset đứng yên trong lúc quiz nên
+          // proximity cũng giữ nguyên, không cần can thiệp gì thêm ở đây.
           triggerQuiz();
           return;
         }
@@ -183,6 +234,7 @@ const Game = (() => {
     }
 
     if (bird.y + bird.radius > H - GROUND_HEIGHT || bird.y - bird.radius < 0) {
+      Audio_.stopGlory(); // yêu cầu: chết thì tắt luôn glory glory
       return handleDeath();
     }
 
@@ -194,6 +246,7 @@ const Game = (() => {
         const hitsTop = bird.y - bird.radius < topPipeBottom;
         const hitsBottom = bird.y + bird.radius > bottomPipeTop;
         if (hitsTop || hitsBottom) {
+          Audio_.stopGlory(); // yêu cầu: chết thì tắt luôn glory glory
           return handleDeath();
         }
       }
@@ -206,11 +259,35 @@ const Game = (() => {
   let respawnTimer = null;
 
   function handleDeath() {
+    // Bắt đầu hiệu ứng chết kiểu Mario: chim bật ngược lên rồi rơi xoay tròn ra khỏi
+    // màn hình. Thế giới (cột/người khác/camera) không tự trôi thêm trong lúc này
+    // (worldOffset đứng yên tại đúng vị trí vừa chết), nhưng người khác vẫn tự
+    // interpolate/di chuyển theo world offset thật của họ nên vẫn thấy họ "trôi qua".
+    state = "dying";
+    deathAnimElapsed = 0;
+    bird.vy = DEATH_BOUNCE_VELOCITY;
+    Network.sendPlayerState({ worldOffset, y: bird.y, vy: bird.vy, angle: 0, alive: false });
+    Audio_.playDie(); // phát nhạc die + tự động kéo volume background về 0
+  }
+
+  function updateDeathAnimation(dt) {
+    deathAnimElapsed += dt;
+
+    bird.vy += DEATH_GRAVITY * dt;
+    bird.y += bird.vy * dt;
+
+    const fellOffScreen = bird.y - bird.radius > H; // rơi hẳn khỏi mép dưới canvas (không chỉ chạm đất)
+    const timedOut = deathAnimElapsed >= DEATH_ANIM_MAX_DURATION;
+    if (fellOffScreen || timedOut) {
+      showDeathOverlay();
+    }
+  }
+
+  function showDeathOverlay() {
     // Luật: hết giờ mới kết thúc trận, ai điểm cao nhất thắng -> chết thì hồi sinh
     // lại từ vạch xuất phát (worldOffset = 0) sau ít giây, không phải chờ ai khác.
     // bestScore (điểm gửi server) không bị reset dù bay lại từ đầu map.
     state = "dead";
-    Network.sendPlayerState({ worldOffset, y: bird.y, vy: bird.vy, angle: 0, alive: false });
 
     let remaining = RESPAWN_DELAY_SEC;
     deathCountdownNumber.textContent = remaining;
@@ -227,6 +304,7 @@ const Game = (() => {
         respawnTimer = setTimeout(tick, 1000);
       } else {
         deathScreen.classList.add("hidden");
+        Audio_.restoreBackground(); // hồi sinh xong -> trả volume background về bình thường
         resetRun();
       }
     };
@@ -257,10 +335,31 @@ const Game = (() => {
     drawMountains();
     drawClouds();
     drawPipes();
+    drawGloryLogos();
     drawGround();
     drawOtherBirds();
-    drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null);
+    const dyingAngle = state === "dying" ? deathAnimElapsed * DEATH_SPIN_SPEED : undefined;
+    drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null, dyingAngle);
     drawRaceBar();
+  }
+
+  // Easter egg: vẽ logo MU cố định trên bầu trời tại các mốc 40%/80% chiều dài map,
+  // chỉ vẽ khi nằm trong tầm nhìn (dùng chung công thức camera với cột/chim khác).
+  function drawGloryLogos() {
+    if (!gloryLogoImg.complete || gloryLogoImg.naturalWidth === 0) return; // ảnh chưa tải xong thì bỏ qua, không lỗi
+    const logoY = 90; // độ cao cố định gần đỉnh trời, phía trên các cột
+
+    for (const logoWorldX of gloryLogoWorldXs) {
+      const screenX = logoWorldX - worldOffset;
+      if (screenX < -GLORY_LOGO_SIZE - VIEW_MARGIN || screenX > W + VIEW_MARGIN) continue;
+      ctx.drawImage(
+        gloryLogoImg,
+        screenX - GLORY_LOGO_SIZE / 2,
+        logoY - GLORY_LOGO_SIZE / 2,
+        GLORY_LOGO_SIZE,
+        GLORY_LOGO_SIZE
+      );
+    }
   }
 
   function drawSky() {
@@ -521,10 +620,13 @@ const Game = (() => {
     ctx.restore();
   }
 
-  function drawBird(b, isSelf, nickname) {
+  function drawBird(b, isSelf, nickname, overrideAngle) {
     ctx.save();
     ctx.translate(b.x, b.y);
-    const angle = Math.max(-0.5, Math.min(0.9, b.vy / (MAX_FALL_SPEED * 0.6)));
+    const angle =
+      overrideAngle !== undefined
+        ? overrideAngle
+        : Math.max(-0.5, Math.min(0.9, b.vy / (MAX_FALL_SPEED * 0.6)));
     ctx.rotate(angle);
 
     const r = bird.radius;
@@ -762,6 +864,7 @@ const Game = (() => {
     document.getElementById("quiz-screen").classList.add("hidden");
     clearTimeout(respawnTimer);
     deathScreen.classList.add("hidden");
+    Audio_.playBackground();
 
     rand = createSeededRandom(seed);
     bestScore = 0;
@@ -769,6 +872,14 @@ const Game = (() => {
     matchEndAt = Date.now() + durationSec * 1000;
     pipes = generateFixedMap(durationSec); // map cố định chung, sinh 1 lần duy nhất cho cả trận
     mapTotalLength = pipes[pipes.length - 1].worldX; // dùng làm mốc 100% cho thanh đua
+
+    // Logo MU đặt theo % số cột THỰC TẾ bay được trong đúng thời gian trận (không phải %
+    // của map dự phòng dài hơn 1.5 lần ở trên) - ví dụ trận 90s, PIPE_SPEED hiện tại cho
+    // ra ước lượng ~58 cột vượt được nếu bay liên tục không chết, logo1 đặt ở cột ~23 (40%),
+    // logo2 ở cột ~47 (80%), quy đổi sang worldX bằng estimatedPipeCount * PIPE_SPACING.
+    const estimatedPipeCount = (PIPE_SPEED * durationSec) / PIPE_SPACING;
+    gloryLogoWorldXs = GLORY_LOGO_PERCENTAGES.map((pct) => estimatedPipeCount * pct * PIPE_SPACING);
+    Audio_.stopGlory(); // đảm bảo sạch trạng thái glory từ trận trước (nếu có)
 
     otherPlayers = new Map();
     if (room && room.players) {
@@ -802,6 +913,7 @@ const Game = (() => {
     document.getElementById("quiz-screen").classList.add("hidden");
     clearTimeout(respawnTimer);
     deathScreen.classList.add("hidden");
+    Audio_.stopBackground(); // dừng nhạc nền khi rời trận (kể cả trường hợp giải tán phòng giữa chừng)
     if (rafId !== null) {
       cancelAnimationFrame(rafId);
       rafId = null;

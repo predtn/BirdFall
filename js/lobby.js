@@ -205,6 +205,7 @@ const Lobby = (() => {
   // ----- Kết thúc trận: bảng tổng kết -----
   Network.on("match:ended", ({ results }) => {
     Game.stop();
+    Audio_.playEnd(); // trận kết thúc thật (hết giờ) -> tắt background, phát nhạc end thay thế
     hud.classList.add("hidden");
     renderResults(results);
     showOnly("results");
@@ -242,7 +243,8 @@ const Lobby = (() => {
   Network.on("room:state", (room) => {
     currentRoom = room;
     if (room.state === "lobby" && !screens.results.classList.contains("hidden")) {
-      // Chủ phòng bấm "Chơi lại" -> quay về phòng chờ cho tất cả
+      // Chủ phòng bấm "Chơi lại" -> quay về phòng chờ cho tất cả, dừng nhạc end đang phát
+      Audio_.stopAll();
       renderWaitingRoom();
       showOnly("waiting");
       return;

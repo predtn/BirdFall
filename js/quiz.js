@@ -11,6 +11,20 @@ const Quiz = (() => {
   const questionEl = document.getElementById("quiz-question");
   const optionsEl = document.getElementById("quiz-options");
   const feedbackEl = document.getElementById("quiz-feedback");
+  const resultImgEl = document.getElementById("quiz-result-img");
+
+  const CORRECT_IMG = "assets/Faker.jpg";
+  const WRONG_IMGS = ["assets/wrong_1.jpg", "assets/wrong_2.png"];
+
+  function showResultImg(src) {
+    resultImgEl.src = src;
+    resultImgEl.classList.remove("hidden");
+  }
+
+  function hideResultImg() {
+    resultImgEl.classList.add("hidden");
+    resultImgEl.src = "";
+  }
 
   async function loadQuestions() {
     try {
@@ -40,6 +54,7 @@ const Quiz = (() => {
     questionEl.textContent = q.question;
     feedbackEl.textContent = "";
     optionsEl.innerHTML = "";
+    hideResultImg(); // câu hỏi mới (kể cả sau khi trả lời sai) -> ẩn ảnh của lượt trước đi
 
     q.options.forEach((opt, i) => {
       const btn = document.createElement("button");
@@ -59,6 +74,8 @@ const Quiz = (() => {
       btnEl.classList.add("correct");
       feedbackEl.textContent = "Chuẩn không cần chỉnh!";
       feedbackEl.style.color = "#2ecc71";
+      Audio_.playCorrectAnswer();
+      showResultImg(CORRECT_IMG);
       setTimeout(() => {
         hide();
         if (onCorrectCallback) onCorrectCallback();
@@ -67,6 +84,9 @@ const Quiz = (() => {
       btnEl.classList.add("wrong");
       feedbackEl.textContent = "Ối dồi ôi!";
       feedbackEl.style.color = "#e74c3c";
+      Audio_.playWrongAnswer();
+      const randomWrongImg = WRONG_IMGS[Math.floor(Math.random() * WRONG_IMGS.length)];
+      showResultImg(randomWrongImg);
       setTimeout(() => {
         currentQuestion = pickQuestion();
         if (currentQuestion) renderQuestion(currentQuestion);
@@ -88,6 +108,7 @@ const Quiz = (() => {
 
   function hide() {
     screenEl.classList.add("hidden");
+    hideResultImg();
   }
 
   return { loadQuestions, show, hide };
