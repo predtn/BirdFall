@@ -4,8 +4,8 @@
 const Lobby = (() => {
   let nickname = "";
   let currentRoom = null; // bản sao state phòng mới nhất nhận từ server
-  let selectedAvatarId = 1; // mặc định avt_1, người chơi có thể đổi ở màn hình nickname
-  const AVATAR_COUNT = 10; // khớp đúng số file assets/avt_1.png .. avt_10.png
+  let selectedAvatarId = 1;
+  const AVATAR_COUNT = 10;
 
   // ----- DOM refs -----
   const screens = {
@@ -70,7 +70,7 @@ const Lobby = (() => {
     clearTimeout(toastHideTimer);
     toastHideTimer = setTimeout(() => {
       toastEl.classList.remove("show");
-      setTimeout(() => toastEl.classList.add("hidden"), 250); // đợi hết transition rồi mới ẩn hẳn
+      setTimeout(() => toastEl.classList.add("hidden"), 250);
     }, durationMs);
   }
 
@@ -232,9 +232,7 @@ const Lobby = (() => {
     void countdownNumber.offsetWidth;
     countdownNumber.style.animation = "";
 
-    // Phát "3-2-1-Fight" đúng 1 lần duy nhất khi bắt đầu đếm ngược (count=3 là lần đầu
-    // tiên server bắn sự kiện này), không phát lại ở count=2/1 để tránh chồng âm.
-    if (count === 3) Audio_.playCountdown();
+    if (count === 3) Audio_.playCountdown(); // chỉ phát 1 lần lúc bắt đầu đếm ngược
   });
 
   // ----- Bắt đầu trận: chuyển quyền điều khiển sang game.js -----
@@ -247,7 +245,7 @@ const Lobby = (() => {
   // ----- Kết thúc trận: bảng tổng kết -----
   Network.on("match:ended", ({ results }) => {
     Game.stop();
-    Audio_.playEnd(); // trận kết thúc thật (hết giờ) -> tắt background, phát nhạc end thay thế
+    Audio_.playEnd();
     hud.classList.add("hidden");
     renderResults(results);
     showOnly("results");
@@ -285,7 +283,7 @@ const Lobby = (() => {
   Network.on("room:state", (room) => {
     currentRoom = room;
     if (room.state === "lobby" && !screens.results.classList.contains("hidden")) {
-      // Chủ phòng bấm "Chơi lại" -> quay về phòng chờ cho tất cả, dừng nhạc end đang phát
+      // "Chơi lại" -> quay về phòng chờ, dừng nhạc end đang phát
       Audio_.stopAll();
       renderWaitingRoom();
       showOnly("waiting");
@@ -304,10 +302,8 @@ const Lobby = (() => {
     showToast("Tản giái");
   });
 
-  // ----- Click sound cho MỌI nút bấm trong game (event delegation ở cấp document) -----
-  // Bắt sự kiện click nổi bọt (bubble) lên document thay vì gắn từng listener riêng cho
-  // từng nút - tự động phủ hết mọi <button> tĩnh trong HTML (lobby) lẫn nút sinh động
-  // (đáp án quiz trong quiz.js), không cần sửa thêm chỗ nào khác khi thêm nút mới sau này.
+  // Click sound cho mọi nút bấm - event delegation ở cấp document, tự phủ cả nút sinh động
+  // (đáp án quiz), không cần sửa gì khi thêm nút mới.
   document.addEventListener("click", (e) => {
     if (e.target.closest("button")) Audio_.playClick();
   });

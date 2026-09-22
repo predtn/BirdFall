@@ -1,11 +1,7 @@
 // BirdFall multiplayer server.
-// Quản lý phòng chơi trong bộ nhớ (không cần database vì phòng chỉ tồn tại tạm thời).
-// Vai trò chính:
-//  - Nhận nickname, tạo/join phòng.
-//  - Đồng bộ seed ngẫu nhiên cho cột (mỗi người tự chạy vật lý/pattern cột cục bộ
-//    nhưng ra kết quả giống hệt nhau nhờ cùng seed) -> không cần server broadcast cột.
-//  - Broadcast vị trí chim của từng người để mọi người thấy nhau bay (giống .io).
-//  - Đếm ngược, đếm giờ trận đấu, chấm điểm, gửi bảng tổng kết.
+// Quản lý phòng chơi trong bộ nhớ (RAM, không cần database vì phòng chỉ tồn tại tạm thời).
+// Đồng bộ seed ngẫu nhiên cho cột thay vì broadcast từng cột: mỗi client tự sinh map
+// giống hệt nhau từ cùng seed.
 
 const path = require("path");
 const express = require("express");
@@ -21,9 +17,8 @@ const MIN_DURATION_SEC = process.env.BIRDFALL_MIN_DURATION
   ? Number(process.env.BIRDFALL_MIN_DURATION)
   : 30; // cho phép hạ sàn khi chạy test tự động, mặc định 30s khi chơi thật
 
-// Giới hạn số người/phòng: tối thiểu 2 (chơi 1 mình thì không cần phòng), tối đa 30
-// (lưu ý hiệu năng O(N^2) của broadcast vị trí - ở 30 người là ~13000 msg/giây/phòng,
-// vẫn ổn với host có đủ RAM/CPU nhưng là mức khá cao, dễ giật nếu host yếu).
+// Tối đa 30: broadcast vị trí là O(N^2), ở 30 người là ~13000 msg/giây/phòng - mức cao,
+// dễ giật nếu host yếu.
 const MIN_ROOM_PLAYERS = 2;
 const MAX_ROOM_PLAYERS = 30;
 const DEFAULT_ROOM_PLAYERS = 8;
@@ -65,7 +60,7 @@ const AVATAR_COUNT = 10; // khớp đúng số file assets/avt_1.png .. avt_10.p
 
 function sanitizeAvatarId(id) {
   const n = Math.round(Number(id));
-  if (!Number.isFinite(n) || n < 1 || n > AVATAR_COUNT) return 1; // mặc định avt_1 nếu giá trị không hợp lệ
+  if (!Number.isFinite(n) || n < 1 || n > AVATAR_COUNT) return 1;
   return n;
 }
 
@@ -138,7 +133,7 @@ function startMatch(room) {
   for (const p of room.players.values()) {
     p.score = 0;
     p.alive = true;
-    p.hasFlag = false; // cờ MU là thành tựu riêng của TỪNG trận đấu, reset khi bắt đầu trận mới
+    p.hasFlag = false; // reset mỗi trận mới
   }
 
   io.to(room.code).emit("match:started", {
@@ -277,9 +272,8 @@ io.on("connection", (socket) => {
     socket.data.roomCode = null;
   });
 
-  // Người chơi gửi trạng thái chim của mình lên, server broadcast lại cho cả phòng
-  // (trừ chính người gửi) để render "chim của người khác". worldOffset = quãng đường
-  // đã bay trên map cố định chung của trận (không phải x trên màn hình, vốn luôn = 90).
+  // Broadcast vị trí chim cho cả phòng trừ người gửi. worldOffset = quãng đường đã bay
+  // trên map cố định (không phải x màn hình, luôn = 90).
   socket.on("player:state", ({ worldOffset, y, vy, angle, alive }) => {
     const room = rooms.get(socket.data.roomCode);
     if (!room || room.state !== "playing") return;
@@ -303,13 +297,12 @@ io.on("connection", (socket) => {
     io.to(room.code).emit("player:scoreUpdate", { id: socket.id, score: p.score });
   });
 
-  // Người chơi va chạm được vào logo MU (easter egg) -> đánh dấu skin cờ MU, giữ suốt
-  // trận đấu (không mất khi chết/hồi sinh), broadcast cho CẢ phòng để mọi người đều thấy.
+  // Easter egg: va chạm logo MU -> gắn skin cờ, giữ suốt trận, broadcast cho cả phòng.
   socket.on("player:earnFlag", () => {
     const room = rooms.get(socket.data.roomCode);
     if (!room || room.state !== "playing") return;
     const p = room.players.get(socket.id);
-    if (!p || p.hasFlag) return; // đã có cờ rồi thì bỏ qua, tránh broadcast thừa
+    if (!p || p.hasFlag) return;
     p.hasFlag = true;
     io.to(room.code).emit("player:flagEarned", { id: socket.id });
   });
