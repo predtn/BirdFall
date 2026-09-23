@@ -506,6 +506,69 @@ button.hidden {
   display: none;
 }
 
+/* ----- Nút trợ giúp "Cách chơi" (góc phải trên phòng chờ) ----- */
+#help-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  box-shadow: none;
+  border: 2px solid var(--panel-border);
+}
+
+#help-btn:hover {
+  background: rgba(255, 201, 60, 0.25);
+  border-color: var(--accent);
+}
+
+#help-popup {
+  position: absolute;
+  top: 52px;
+  right: 14px;
+  z-index: 20;
+  width: min(300px, calc(100% - 28px));
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  text-align: left;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  animation: quizPop 0.2s ease;
+}
+
+#help-popup.hidden {
+  display: none;
+}
+
+#help-popup h3 {
+  margin: 0 0 10px;
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+#help-popup ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#help-popup li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e8ecf7;
+}
+
 /* ----- Phòng chờ ----- */
 .room-code-label {
   margin-bottom: 4px !important;

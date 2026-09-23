@@ -51,6 +51,8 @@ const Lobby = (() => {
   const waitingStartBtn = document.getElementById("waiting-start-btn");
   const waitingLeaveBtn = document.getElementById("waiting-leave-btn");
   const waitingHint = document.getElementById("waiting-hint");
+  const helpBtn = document.getElementById("help-btn");
+  const helpPopup = document.getElementById("help-popup");
 
   const countdownNumber = document.getElementById("countdown-number");
 
@@ -224,6 +226,22 @@ const Lobby = (() => {
     Network.leaveRoom();
     currentRoom = null;
     showOnly("menu");
+  });
+
+  // ----- Nút trợ giúp "Cách chơi": hiện khi hover (desktop) hoặc bấm (mobile không có hover) -----
+  helpBtn.addEventListener("mouseenter", () => helpPopup.classList.remove("hidden"));
+  helpBtn.addEventListener("mouseleave", () => {
+    if (!helpPopup.matches(":hover")) helpPopup.classList.add("hidden");
+  });
+  helpPopup.addEventListener("mouseleave", () => helpPopup.classList.add("hidden"));
+  helpBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    helpPopup.classList.toggle("hidden");
+  });
+  document.addEventListener("click", (e) => {
+    if (!helpPopup.classList.contains("hidden") && !helpPopup.contains(e.target) && e.target !== helpBtn) {
+      helpPopup.classList.add("hidden");
+    }
   });
 
   // ----- Màn hình 4: đếm ngược -----

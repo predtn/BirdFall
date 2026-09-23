@@ -60,6 +60,18 @@
 
     <!-- 3. Phòng chờ -->
     <div id="waiting-screen" class="overlay hidden">
+      <button id="help-btn" type="button" title="Cách chơi">!</button>
+      <div id="help-popup" class="hidden">
+        <h3>Cách chơi</h3>
+        <ul>
+          <li>Bấm Space / chạm màn hình để chim bay lên, né cột để không rơi.</li>
+          <li>Cứ vượt qua 3 cột sẽ hiện câu hỏi trắc nghiệm - trả lời đúng mới bay tiếp, sai thì đếm ngược 2s rồi hỏi câu khác.</li>
+          <li>Điểm số = số cột đã vượt qua. Chết thì bay lại từ đầu map, nhưng điểm cao nhất vẫn được giữ.</li>
+          <li>Nhặt được lucky box (chỉ 5 hộp/trận, ai nhanh tay hơn thắng) để ghi điểm thưởng riêng.</li>
+          <li>Trả lời đúng liên tiếp để sạc đầy skill sét ⚡ - dùng để đánh gục ngẫu nhiên người chơi khác!</li>
+          <li>Thanh đua dưới màn hình cho biết vị trí của mọi người. Ai điểm cao nhất khi hết giờ sẽ thắng.</li>
+        </ul>
+      </div>
       <h1>Phòng chờ</h1>
       <p class="room-code-label">Mã phòng: <span id="waiting-room-code" class="room-code"></span></p>
       <p id="waiting-room-name"></p>
