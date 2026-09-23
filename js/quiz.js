@@ -92,6 +92,7 @@ const Quiz = (() => {
   }
 
   const WRONG_COUNTDOWN_SEC = 2;
+  let wrongCountdownTimer = null;
 
   function startWrongCountdown() {
     let remaining = WRONG_COUNTDOWN_SEC;
@@ -102,13 +103,14 @@ const Quiz = (() => {
       remaining--;
       if (remaining > 0) {
         feedbackEl.textContent = `Ối dồi ôi! Câu tiếp theo sau ${remaining}s...`;
-        setTimeout(tick, 1000);
+        wrongCountdownTimer = setTimeout(tick, 1000);
       } else {
         currentQuestion = pickQuestion();
         if (currentQuestion) renderQuestion(currentQuestion);
       }
     };
-    setTimeout(tick, 1000);
+    clearTimeout(wrongCountdownTimer);
+    wrongCountdownTimer = setTimeout(tick, 1000);
   }
 
   function show(onCorrect) {
@@ -126,6 +128,9 @@ const Quiz = (() => {
   function hide() {
     screenEl.classList.add("hidden");
     hideResultImg();
+    // Hủy timer đếm ngược "trả lời sai" nếu quiz bị đóng đột ngột (ví dụ bị sét đánh chết
+    // giữa lúc đang đếm ngược) - nếu không, tick() vẫn chạy ngầm và tự mở lại quiz sau đó.
+    clearTimeout(wrongCountdownTimer);
   }
 
   return { loadQuestions, show, hide };

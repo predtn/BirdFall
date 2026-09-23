@@ -229,6 +229,9 @@ const Lobby = (() => {
   });
 
   // ----- Nút trợ giúp "Cách chơi": hiện khi hover (desktop) hoặc bấm (mobile không có hover) -----
+  // Lưu ý: trình duyệt luôn bắn mouseenter TRƯỚC click (kể cả lần chạm đầu tiên trên mobile),
+  // nên click không được "toggle" - nếu không, hover mở popup ra rồi click ngay sau đó sẽ tự
+  // đóng lại. Click chỉ đảm bảo popup đang mở (an toàn cho mobile không có sự kiện hover thật).
   helpBtn.addEventListener("mouseenter", () => helpPopup.classList.remove("hidden"));
   helpBtn.addEventListener("mouseleave", () => {
     if (!helpPopup.matches(":hover")) helpPopup.classList.add("hidden");
@@ -236,7 +239,7 @@ const Lobby = (() => {
   helpPopup.addEventListener("mouseleave", () => helpPopup.classList.add("hidden"));
   helpBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    helpPopup.classList.toggle("hidden");
+    helpPopup.classList.remove("hidden");
   });
   document.addEventListener("click", (e) => {
     if (!helpPopup.classList.contains("hidden") && !helpPopup.contains(e.target) && e.target !== helpBtn) {
