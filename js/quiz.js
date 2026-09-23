@@ -83,16 +83,31 @@ const Quiz = (() => {
       }, 700);
     } else {
       btnEl.classList.add("wrong");
-      feedbackEl.textContent = "Ối dồi ôi!";
-      feedbackEl.style.color = "#e74c3c";
       Audio_.playWrongAnswer();
       const randomWrongImg = WRONG_IMGS[Math.floor(Math.random() * WRONG_IMGS.length)];
       showResultImg(randomWrongImg);
-      setTimeout(() => {
+      startWrongCountdown();
+    }
+  }
+
+  const WRONG_COUNTDOWN_SEC = 2;
+
+  function startWrongCountdown() {
+    let remaining = WRONG_COUNTDOWN_SEC;
+    feedbackEl.style.color = "#e74c3c";
+    feedbackEl.textContent = `Ối dồi ôi! Câu tiếp theo sau ${remaining}s...`;
+
+    const tick = () => {
+      remaining--;
+      if (remaining > 0) {
+        feedbackEl.textContent = `Ối dồi ôi! Câu tiếp theo sau ${remaining}s...`;
+        setTimeout(tick, 1000);
+      } else {
         currentQuestion = pickQuestion();
         if (currentQuestion) renderQuestion(currentQuestion);
-      }, 900);
-    }
+      }
+    };
+    setTimeout(tick, 1000);
   }
 
   function show(onCorrect) {
