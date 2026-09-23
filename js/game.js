@@ -1040,7 +1040,7 @@ const Game = (() => {
         // trước rồi mới kích hoạt chết, tránh bug "đang trả lời câu hỏi thì miễn nhiễm sét".
         // Không giết khi đang "dying"/"dead" (đã chết/hồi sinh dở, tránh chồng animation).
         if (state === "playing" || state === "quiz") {
-          if (state === "quiz") Quiz.hide();
+          if (state === "quiz") Quiz.hide(true); // force: hủy timer nội bộ của quiz, tránh chúng tự đè state="playing" lên "dying" sau đó
           handleDeath(`${myNickname} đã bị sét đánh trúng`, "lightning");
         }
       } else {
@@ -1183,7 +1183,7 @@ const Game = (() => {
   function stop() {
     state = "idle";
     stopNetworkSending();
-    Quiz.hide();
+    Quiz.hide(true);
     document.getElementById("quiz-screen").classList.add("hidden");
     clearTimeout(respawnTimer);
     deathScreen.classList.add("hidden");

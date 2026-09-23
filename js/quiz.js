@@ -6,6 +6,7 @@ const Quiz = (() => {
   let usedIndexes = new Set();
   let currentQuestion = null;
   let onCorrectCallback = null;
+  let correctAdvanceTimer = null; // timer 700ms chờ trước khi tự chuyển sang playing sau khi trả lời đúng
 
   const screenEl = document.getElementById("quiz-screen");
   const questionEl = document.getElementById("quiz-question");
@@ -78,7 +79,8 @@ const Quiz = (() => {
       Audio_.playCorrectAnswer();
       Network.answerCorrect(); // sạc skill sét đánh, server track charge
       showResultImg(CORRECT_IMG);
-      setTimeout(() => {
+      clearTimeout(correctAdvanceTimer);
+      correctAdvanceTimer = setTimeout(() => {
         hide();
         if (onCorrectCallback) onCorrectCallback();
       }, 700);
@@ -125,12 +127,17 @@ const Quiz = (() => {
     screenEl.classList.remove("hidden");
   }
 
-  function hide() {
+  // force=true khi quiz bị đóng CƯỠNG BỨC từ bên ngoài (ví dụ game.js gọi lúc bị sét đánh
+  // chết giữa lúc quiz đang mở) - phải hủy MỌI timer đang chờ và bỏ luôn onCorrectCallback,
+  // nếu không: timer "trả lời đúng" (700ms) hoặc "trả lời sai" (đếm ngược 2s) vẫn chạy ngầm,
+  // rồi tự gọi onCorrectCallback() set state="playing" đè lên state="dying" đang chạy dở,
+  // khiến animation chết bị hủy ngang và người chơi trông như "miễn nhiễm" sét đánh.
+  function hide(force) {
     screenEl.classList.add("hidden");
     hideResultImg();
-    // Hủy timer đếm ngược "trả lời sai" nếu quiz bị đóng đột ngột (ví dụ bị sét đánh chết
-    // giữa lúc đang đếm ngược) - nếu không, tick() vẫn chạy ngầm và tự mở lại quiz sau đó.
     clearTimeout(wrongCountdownTimer);
+    clearTimeout(correctAdvanceTimer);
+    if (force) onCorrectCallback = null;
   }
 
   return { loadQuestions, show, hide };
