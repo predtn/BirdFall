@@ -76,6 +76,7 @@ const Quiz = (() => {
       feedbackEl.textContent = "Chuẩn không cần chỉnh!";
       feedbackEl.style.color = "#2ecc71";
       Audio_.playCorrectAnswer();
+      Network.answerCorrect(); // sạc skill sét đánh, server track charge
       showResultImg(CORRECT_IMG);
       setTimeout(() => {
         hide();

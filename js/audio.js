@@ -60,6 +60,7 @@ const Audio_ = (() => {
   loadSfx("wrongAnswer", "assets/wrong_answer.mp3");
   loadSfx("die", "assets/die.mp3");
   loadSfx("countdown", encodeURI("assets/3 2 1 fight.mp3")); // tên file có khoảng trắng -> encode rõ ràng
+  loadSfx("lightning", "assets/lightning_bolt.mp3");
 
   // Safari/iOS tạo AudioContext ở trạng thái "suspended" tới khi có tương tác đầu tiên.
   function resumeAudioContextOnce() {
@@ -177,6 +178,10 @@ const Audio_ = (() => {
     playSfx("countdown", 1);
   }
 
+  function playLightning() {
+    playSfx("lightning", 1);
+  }
+
   function stopAll() {
     stopBackground();
     endMusic.pause();
@@ -194,6 +199,7 @@ const Audio_ = (() => {
     playWrongAnswer,
     playClick,
     playCountdown,
+    playLightning,
     updateGloryProximity,
     stopGlory,
     stopAll,

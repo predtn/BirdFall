@@ -20,6 +20,7 @@ const Lobby = (() => {
   const hud = document.getElementById("hud");
   const luckyBoxHudContainer = document.getElementById("lucky-box-hud-container");
   const eventFeed = document.getElementById("event-feed");
+  const lightningSkillHud = document.getElementById("lightning-skill-hud");
 
   const nicknameInput = document.getElementById("nickname-input");
   const nicknameConfirmBtn = document.getElementById("nickname-confirm-btn");
@@ -243,6 +244,7 @@ const Lobby = (() => {
     hud.classList.remove("hidden");
     luckyBoxHudContainer.classList.remove("hidden");
     eventFeed.classList.remove("hidden");
+    lightningSkillHud.classList.remove("hidden");
     Game.startMultiplayer({ seed, durationSec, room: currentRoom });
   });
 
@@ -253,6 +255,7 @@ const Lobby = (() => {
     hud.classList.add("hidden");
     luckyBoxHudContainer.classList.add("hidden");
     eventFeed.classList.add("hidden");
+    lightningSkillHud.classList.add("hidden");
     renderResults(results);
     showOnly("results");
   });
@@ -329,6 +332,7 @@ const Lobby = (() => {
     hud.classList.add("hidden");
     luckyBoxHudContainer.classList.add("hidden");
     eventFeed.classList.add("hidden");
+    lightningSkillHud.classList.add("hidden");
     currentRoom = null;
     showOnly("menu");
     showToast("Tản giái");

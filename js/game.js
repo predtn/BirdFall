@@ -101,6 +101,29 @@ const Game = (() => {
   const luckyBoxImg = new Image();
   luckyBoxImg.src = "assets/lucky_box.png";
 
+  // ----- Skill sét đánh: sạc đầy sau LIGHTNING_CHARGE_NEEDED câu trả lời đúng liên tiếp,
+  // dùng để triệu hồi sét đánh chết 2 người chơi ngẫu nhiên khác (không mất bestScore, chỉ
+  // phải bay lại từ đầu giống chết bình thường). Server làm trọng tài toàn bộ (đếm charge,
+  // chọn nạn nhân) - client chỉ hiển thị HUD và vẽ hiệu ứng theo lệnh server gửi về. -----
+  const LIGHTNING_CHARGE_NEEDED = 5;
+  const LIGHTNING_BOLT_DURATION_MS = 500; // hiệu ứng tia sét hiện trên màn hình bao lâu
+  let myLightningCharge = 0;
+  let activeLightningBolts = []; // [{ worldX, y, startTime }] - vẽ trong draw(), tự dọn khi hết hạn
+  const lightningSkillHud = document.getElementById("lightning-skill-hud");
+  const lightningSkillIcon = document.getElementById("lightning-skill-icon");
+  const lightningSkillCount = document.getElementById("lightning-skill-count");
+
+  function updateLightningSkillHud() {
+    lightningSkillCount.textContent = `${myLightningCharge}/${LIGHTNING_CHARGE_NEEDED}`;
+    lightningSkillIcon.classList.toggle("ready", myLightningCharge >= LIGHTNING_CHARGE_NEEDED);
+  }
+
+  lightningSkillIcon.addEventListener("click", () => {
+    if (myLightningCharge >= LIGHTNING_CHARGE_NEEDED && state === "playing") {
+      Network.useLightningSkill();
+    }
+  });
+
   // ----- Feed thông báo sự kiện (chết/nhặt quà/chạm easter egg MU), góc trên trái -----
   const EVENT_FEED_DURATION_MS = 3000;
   const eventFeedEl = document.getElementById("event-feed");
@@ -363,11 +386,12 @@ const Game = (() => {
   const deathCountdownNumber = document.getElementById("death-countdown-number");
   let respawnTimer = null;
 
-  function handleDeath() {
+  function handleDeath(feedText, deathCause) {
     // worldOffset đứng yên khi chết; người khác vẫn interpolate theo world offset thật
     // của họ nên vẫn thấy họ "trôi qua". dying=true + deathStartY/deathStartVy cho người
     // khác tự tính lại animation xoay+rơi bằng công thức vật lý đóng (xem drawOtherBirds),
-    // không cần server gửi update liên tục trong lúc chết.
+    // không cần server gửi update liên tục trong lúc chết. deathCause cho người khác biết
+    // để hiện đúng feedback ("chết vì ngu" hay "bị sét đánh") thay vì luôn hiện mặc định.
     state = "dying";
     deathAnimElapsed = 0;
     bird.vy = DEATH_BOUNCE_VELOCITY;
@@ -380,9 +404,10 @@ const Game = (() => {
       dying: true,
       deathStartY: bird.y,
       deathStartVy: bird.vy,
+      deathCause: deathCause || "normal",
     });
     Audio_.playDie();
-    pushEventFeed(`${myNickname} đã chết vì ngu`, "event-death");
+    pushEventFeed(feedText || `${myNickname} đã chết vì ngu`, "event-death");
   }
 
   function updateDeathAnimation(dt) {
@@ -455,7 +480,50 @@ const Game = (() => {
     drawOtherBirds();
     const dyingAngle = state === "dying" ? deathAnimElapsed * DEATH_SPIN_SPEED : undefined;
     drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null, dyingAngle, hasFlag, myAvatarId);
+    drawLightningBolts();
     drawRaceBar();
+  }
+
+  // Vẽ tia sét zigzag ngẫu nhiên từ đỉnh màn hình đánh thẳng xuống đúng vị trí world của nạn
+  // nhân tại thời điểm bị đánh (không đuổi theo họ di chuyển sau đó, vì đây chỉ là hiệu ứng
+  // chớp nhoáng ~500ms). Fade dần theo thời gian, tự dọn khỏi mảng khi hết hạn.
+  function drawLightningBolts() {
+    if (activeLightningBolts.length === 0) return;
+    const now = performance.now();
+
+    activeLightningBolts = activeLightningBolts.filter((bolt) => now - bolt.startTime < LIGHTNING_BOLT_DURATION_MS);
+
+    for (const bolt of activeLightningBolts) {
+      const screenX = bolt.worldX - worldOffset;
+      if (screenX < -VIEW_MARGIN || screenX > W + VIEW_MARGIN) continue;
+
+      const elapsed = now - bolt.startTime;
+      const progress = elapsed / LIGHTNING_BOLT_DURATION_MS;
+      const alpha = progress < 0.3 ? 1 : Math.max(0, 1 - (progress - 0.3) / 0.7); // giữ sáng rõ đầu rồi fade
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = "#e8f4ff";
+      ctx.lineWidth = 4;
+      ctx.shadowColor = "#8fd8ff";
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+
+      // Zigzag ngẫu nhiên (seedless - chỉ hiệu ứng hình ảnh, không cần đồng bộ chính xác
+      // giữa các client) từ đỉnh màn hình xuống đúng bolt.y
+      const segments = 7;
+      let x = bolt.worldX - worldOffset;
+      let y = 0;
+      ctx.moveTo(x, y);
+      for (let i = 1; i <= segments; i++) {
+        const targetY = (bolt.y / segments) * i;
+        x = screenX + (Math.random() - 0.5) * 30;
+        y = targetY;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   // Easter egg: vẽ logo MU tại các mốc GLORY_LOGO_PERCENTAGES, dùng chung công thức
@@ -872,7 +940,7 @@ const Game = (() => {
   const RENDER_DELAY_MS = 100;
   const MAX_BUFFER_SIZE = 30; // ~2 giây dữ liệu ở tần suất gửi hiện tại
 
-  Network.on("player:update", ({ id, worldOffset: theirWorldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy }) => {
+  Network.on("player:update", ({ id, worldOffset: theirWorldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy, deathCause }) => {
     const existing = otherPlayers.get(id);
     const worldX = theirWorldOffset + 90;
     const snapshot = { t: performance.now(), worldX, y, vy };
@@ -881,7 +949,13 @@ const Game = (() => {
     // thay vào đó lưu mốc bắt đầu để tự tính lại animation xoay+rơi cục bộ (xem drawOtherBirds).
     if (dying) {
       if (existing) {
-        if (!existing.dying) pushEventFeed(`${existing.nickname} đã chết vì ngu`, "event-death");
+        if (!existing.dying) {
+          const feedText =
+            deathCause === "lightning"
+              ? `${existing.nickname} đã bị sét đánh trúng` // đã hiện lúc nhận player:lightningStrike rồi nên bỏ qua ở đây
+              : `${existing.nickname} đã chết vì ngu`;
+          if (deathCause !== "lightning") pushEventFeed(feedText, "event-death");
+        }
         existing.dying = true;
         existing.deathAnimStartClientTime = performance.now();
         existing.deathStartY = deathStartY;
@@ -929,6 +1003,50 @@ const Game = (() => {
       luckyBoxCount++;
       luckyBoxHud.textContent = String(luckyBoxCount);
     }
+  });
+
+  // Server xác nhận sạc thêm charge (sau mỗi câu trả lời đúng) hoặc reset về 0 (sau khi dùng
+  // skill) - chỉ áp dụng cho CHÍNH MÌNH, người khác không cần biết charge của nhau.
+  Network.on("player:lightningCharge", ({ id, charge }) => {
+    if (id !== Network.id) return;
+    myLightningCharge = charge;
+    updateLightningSkillHud();
+  });
+
+  // Có người dùng skill sét đánh - server đã chọn sẵn 2 nạn nhân ngẫu nhiên, TẤT CẢ mọi
+  // người trong phòng (kể cả người dùng skill) đều thấy hiệu ứng tia sét đánh xuống đúng vị
+  // trí world hiện tại của từng nạn nhân. Nạn nhân tự kích hoạt animation chết cục bộ của
+  // chính họ (dùng lại handleDeath() có sẵn) khi nhận ra mình nằm trong danh sách victims.
+  Network.on("player:lightningStrike", ({ casterId, casterNickname, victims }) => {
+    const casterDisplayName = casterId === Network.id ? myNickname : casterNickname;
+    pushEventFeed(`${casterDisplayName} đã triệu hồi sét đánh!`, "event-lightning");
+    Audio_.playLightning(); // mỗi client tự phát local khi nhận broadcast -> cả phòng đều nghe
+
+    victims.forEach(({ id, nickname }) => {
+      let strikeWorldX, strikeY;
+      if (id === Network.id) {
+        strikeWorldX = worldOffset + 90;
+        strikeY = bird.y;
+      } else {
+        const p = otherPlayers.get(id);
+        if (!p) return; // họ có thể đã rời phòng đúng lúc này, bỏ qua an toàn
+        strikeWorldX = p.renderWorldX;
+        strikeY = p.renderY;
+      }
+      activeLightningBolts.push({ worldX: strikeWorldX, y: strikeY, startTime: performance.now() });
+
+      if (id === Network.id) {
+        // Sét đánh vẫn giết được kể cả khi đang mở popup quiz (state === "quiz") - đóng popup
+        // trước rồi mới kích hoạt chết, tránh bug "đang trả lời câu hỏi thì miễn nhiễm sét".
+        // Không giết khi đang "dying"/"dead" (đã chết/hồi sinh dở, tránh chồng animation).
+        if (state === "playing" || state === "quiz") {
+          if (state === "quiz") Quiz.hide();
+          handleDeath(`${myNickname} đã bị sét đánh trúng`, "lightning");
+        }
+      } else {
+        pushEventFeed(`${nickname} đã bị sét đánh trúng`, "event-death");
+      }
+    });
   });
 
   // Dọn "chim ma": nếu ai đó rời phòng giữa trận (F5, mất mạng, thoát tab) mà không kịp
@@ -1025,6 +1143,10 @@ const Game = (() => {
     luckyBoxCount = 0;
     luckyBoxHud.textContent = "0";
     eventFeedEl.innerHTML = ""; // dọn feed sự kiện của trận trước (kể cả khi "Chơi lại")
+
+    myLightningCharge = 0;
+    activeLightningBolts = [];
+    updateLightningSkillHud();
 
     otherPlayers = new Map();
     myAvatarId = 1;

@@ -58,6 +58,8 @@ function sanitizeNickname(name) {
 
 const AVATAR_COUNT = 10; // khớp đúng số file assets/avt_1.png .. avt_10.png
 const LUCKY_BOX_TOTAL = 5; // khớp đúng số lucky box sinh ra mỗi trận (xem LUCKY_BOX_PERCENTAGES ở client)
+const LIGHTNING_CHARGE_NEEDED = 5; // số lần trả lời đúng liên tiếp để sạc đầy skill sét đánh
+const LIGHTNING_VICTIM_COUNT = 2; // số nạn nhân bị sét đánh mỗi lần dùng skill
 
 function sanitizeAvatarId(id) {
   const n = Math.round(Number(id));
@@ -80,6 +82,7 @@ function roomPublicState(room) {
       score: p.score,
       alive: p.alive,
       hasFlag: !!p.hasFlag,
+      lightningCharge: p.lightningCharge || 0,
       isHost: id === room.hostId,
     })),
   };
@@ -143,6 +146,7 @@ function startMatch(room) {
     p.alive = true;
     p.hasFlag = false; // reset mỗi trận mới
     p.luckyBoxCount = 0;
+    p.lightningCharge = 0;
   }
 
   io.to(room.code).emit("match:started", {
@@ -198,6 +202,7 @@ io.on("connection", (socket) => {
       alive: true,
       hasFlag: false,
       luckyBoxCount: 0,
+      lightningCharge: 0,
       worldOffset: 0,
       y: 320,
       vy: 0,
@@ -234,6 +239,7 @@ io.on("connection", (socket) => {
       alive: true,
       hasFlag: false,
       luckyBoxCount: 0,
+      lightningCharge: 0,
       worldOffset: 0,
       y: 320,
       vy: 0,
@@ -285,7 +291,7 @@ io.on("connection", (socket) => {
 
   // Broadcast vị trí chim cho cả phòng trừ người gửi. worldOffset = quãng đường đã bay
   // trên map cố định (không phải x màn hình, luôn = 90).
-  socket.on("player:state", ({ worldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy }) => {
+  socket.on("player:state", ({ worldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy, deathCause }) => {
     const room = rooms.get(socket.data.roomCode);
     if (!room || room.state !== "playing") return;
     const p = room.players.get(socket.id);
@@ -306,6 +312,7 @@ io.on("connection", (socket) => {
       dying,
       deathStartY,
       deathStartVy,
+      deathCause,
     });
   });
 
@@ -344,6 +351,49 @@ io.on("connection", (socket) => {
     room.collectedBoxIndexes.add(index);
     p.luckyBoxCount = (p.luckyBoxCount || 0) + 1;
     io.to(room.code).emit("player:luckyBoxCollected", { boxIndex: index, winnerId: socket.id, winnerNickname: p.nickname });
+  });
+
+  // Sạc skill sét đánh: mỗi câu trả lời đúng +1 charge, tối đa LIGHTNING_CHARGE_NEEDED (client
+  // tự biết đúng/sai cục bộ qua questions.json nên không cần server verify đáp án, chỉ đếm charge -
+  // đủ an toàn vì quiz không tính điểm/ảnh hưởng thắng thua, chỉ mở khóa 1 skill vui).
+  socket.on("player:answerCorrect", () => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || room.state !== "playing") return;
+    const p = room.players.get(socket.id);
+    if (!p) return;
+    p.lightningCharge = Math.min(LIGHTNING_CHARGE_NEEDED, (p.lightningCharge || 0) + 1);
+    io.to(room.code).emit("player:lightningCharge", { id: socket.id, charge: p.lightningCharge });
+  });
+
+  // Dùng skill sét đánh: cần sạc đầy, random tối đa LIGHTNING_VICTIM_COUNT nạn nhân đang sống
+  // (trừ chính mình) - nếu phòng ít người không đủ 2, tự động co lại đánh 1 người (miễn có ít
+  // nhất 1 nạn nhân khả dụng, phòng chỉ 2 người vẫn dùng được). Nạn nhân tử mạng ngay lập tức
+  // (giống chết bình thường, không mất bestScore, chỉ phải bay lại từ đầu). Broadcast cho CẢ
+  // phòng để mọi người thấy hiệu ứng sét đánh tại đúng vị trí nạn nhân.
+  socket.on("player:useLightningSkill", () => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room || room.state !== "playing") return;
+    const caster = room.players.get(socket.id);
+    if (!caster || (caster.lightningCharge || 0) < LIGHTNING_CHARGE_NEEDED) return;
+
+    const candidates = [...room.players.entries()].filter(([id, p]) => id !== socket.id && p.alive);
+    if (candidates.length === 0) return; // không có ai để đánh, không tốn skill
+
+    // Chọn ngẫu nhiên tối đa LIGHTNING_VICTIM_COUNT người không trùng nhau (Fisher-Yates rút gọn)
+    const shuffled = candidates.slice();
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const victims = shuffled.slice(0, Math.min(LIGHTNING_VICTIM_COUNT, shuffled.length));
+
+    caster.lightningCharge = 0;
+    io.to(room.code).emit("player:lightningCharge", { id: socket.id, charge: 0 });
+    io.to(room.code).emit("player:lightningStrike", {
+      casterId: socket.id,
+      casterNickname: caster.nickname,
+      victims: victims.map(([id, p]) => ({ id, nickname: p.nickname })),
+    });
   });
 
   socket.on("disconnect", () => {

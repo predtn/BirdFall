@@ -332,6 +332,70 @@ button:active {
   color: #ff4d4d;
 }
 
+.event-feed-item.event-lightning {
+  color: #fff27a;
+  text-shadow: 0 0 8px rgba(255, 242, 122, 0.9), 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* ----- HUD skill sét đánh, góc phải bên trên thanh đua ----- */
+#lightning-skill-hud {
+  position: absolute;
+  bottom: 72px; /* ngay trên dải đất chứa thanh đua (GROUND_HEIGHT=56px) */
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  user-select: none;
+}
+
+#lightning-skill-hud.hidden {
+  display: none;
+}
+
+#lightning-skill-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: default;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+#lightning-skill-icon.ready {
+  background: linear-gradient(180deg, #fff27a, #ffc93c);
+  color: #3a2a05;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(255, 220, 60, 0.8), 0 4px 0 #b3780f;
+  animation: lightningPulse 1s ease-in-out infinite;
+}
+
+#lightning-skill-icon.ready:hover {
+  transform: scale(1.08);
+}
+
+@keyframes lightningPulse {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(255, 220, 60, 0.8), 0 4px 0 #b3780f;
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(255, 220, 60, 1), 0 4px 0 #b3780f;
+  }
+}
+
+#lightning-skill-count {
+  font-family: "Baloo 2", "Nunito", sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
 /* ----- Form nhập liệu (nickname, tạo/join phòng) ----- */
 input[type="text"],
 input[type="number"] {
