@@ -126,10 +126,18 @@ const Game = (() => {
 
   // ----- Feed thông báo sự kiện (chết/nhặt quà/chạm easter egg MU), góc trên trái -----
   const EVENT_FEED_DURATION_MS = 3000;
+  const EVENT_FEED_MAX_ITEMS = 5; // giới hạn số dòng hiển thị đồng thời, tránh tràn màn hình
+  // khi nhiều người chết/kích hoạt sự kiện dồn dập (ví dụ 20 người cùng chết 1 lúc)
   const eventFeedEl = document.getElementById("event-feed");
   let myNickname = "Bạn"; // set trong startMultiplayer() từ room.players
 
   function pushEventFeed(text, cssClass) {
+    // Vượt quá giới hạn -> đẩy dòng CŨ NHẤT ra ngay lập tức (giống kill feed game thật),
+    // thay vì để tất cả cùng tồn tại 3s làm feed dài lê thê tràn khỏi khung nhìn.
+    while (eventFeedEl.children.length >= EVENT_FEED_MAX_ITEMS) {
+      eventFeedEl.firstElementChild.remove();
+    }
+
     const item = document.createElement("div");
     item.className = `event-feed-item ${cssClass}`;
     item.textContent = text;
