@@ -254,12 +254,12 @@ const Game = (() => {
     return boxes;
   }
 
-  function resetRun() {
+  function resetRun(initialState) {
     bird = { y: H / 2, vy: 0, radius: 14 };
     score = 0;
     pipesSincePipeQuiz = 0;
     worldOffset = 0;
-    state = "playing";
+    state = initialState || "playing";
     scoreHud.textContent = String(bestScore);
     pipes.forEach((p) => (p.passed = false));
   }
@@ -479,7 +479,7 @@ const Game = (() => {
     drawGround();
     drawOtherBirds();
     const dyingAngle = state === "dying" ? deathAnimElapsed * DEATH_SPIN_SPEED : undefined;
-    drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null, dyingAngle, hasFlag, myAvatarId);
+    drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null, dyingAngle, hasFlag, myAvatarId, state === "quiz");
     drawLightningBolts();
     drawRaceBar();
   }
@@ -754,7 +754,7 @@ const Game = (() => {
       const screenX = p.renderWorldX - worldOffset;
 
       if (screenX >= -VIEW_MARGIN && screenX <= W + VIEW_MARGIN) {
-        drawBird({ x: screenX, y: p.renderY, vy: p.renderVy }, false, p.nickname, undefined, p.hasFlag, p.avatarId);
+        drawBird({ x: screenX, y: p.renderY, vy: p.renderVy }, false, p.nickname, undefined, p.hasFlag, p.avatarId, p.inQuiz);
       } else {
         drawOffscreenIndicator(screenX, p.renderY, p.avatarId);
       }
@@ -836,7 +836,7 @@ const Game = (() => {
     }
   }
 
-  function drawBird(b, isSelf, nickname, overrideAngle, hasFlagSkin, avatarId) {
+  function drawBird(b, isSelf, nickname, overrideAngle, hasFlagSkin, avatarId, inQuiz) {
     ctx.save();
     ctx.translate(b.x, b.y);
     const angle =
@@ -856,9 +856,54 @@ const Game = (() => {
 
     ctx.restore();
 
+    // Bong bóng "..." vẽ SAU ctx.restore() (không xoay theo chim, luôn đứng thẳng) - đặt
+    // cao hơn nickname badge để không đè lên nhau, báo hiệu người chơi đang trả lời quiz
+    // thay vì đứng yên vô lý trong lúc mọi người khác vẫn thấy họ bất động trên map.
+    if (inQuiz) {
+      drawThinkingBubble(b.x, b.y - r - 34);
+    }
+
     if (nickname) {
       drawNicknameBadge(b.x, b.y - r - 12, nickname, isSelf);
     }
+  }
+
+  // Bong bóng chat kiểu "..." (3 chấm nảy nhẹ theo thời gian) phía trên đầu, báo hiệu người
+  // chơi đang mở popup quiz trả lời câu hỏi thay vì đứng yên không rõ lý do.
+  function drawThinkingBubble(anchorX, anchorY) {
+    const bubbleWidth = 42;
+    const bubbleHeight = 24;
+    const x = anchorX - bubbleWidth / 2;
+    const y = anchorY - bubbleHeight;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+    ctx.beginPath();
+    drawRoundedRectPath(x, y, bubbleWidth, bubbleHeight, 10);
+    ctx.fill();
+
+    // Đuôi bong bóng nhỏ trỏ xuống đầu chim
+    ctx.beginPath();
+    ctx.moveTo(anchorX - 5, y + bubbleHeight);
+    ctx.lineTo(anchorX + 5, y + bubbleHeight);
+    ctx.lineTo(anchorX, y + bubbleHeight + 7);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3 chấm nảy nhẹ lệch pha nhau theo thời gian thực (frame*0.1 dùng chung nhịp với mây)
+    const dotRadius = 3;
+    const dotSpacing = 10;
+    const bounceTime = performance.now() / 250;
+    ctx.fillStyle = "#5a6b8c";
+    for (let i = 0; i < 3; i++) {
+      const dotX = anchorX - dotSpacing + i * dotSpacing;
+      const bounce = Math.sin(bounceTime + i * 0.9) * 2.5;
+      ctx.beginPath();
+      ctx.arc(dotX, y + bubbleHeight / 2 + bounce, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
   }
 
   // Neo chân cột cờ (không phải góc ảnh) vào (headX, headTopY) - đỉnh đầu-giữa avatar.
@@ -940,7 +985,7 @@ const Game = (() => {
   const RENDER_DELAY_MS = 100;
   const MAX_BUFFER_SIZE = 30; // ~2 giây dữ liệu ở tần suất gửi hiện tại
 
-  Network.on("player:update", ({ id, worldOffset: theirWorldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy, deathCause }) => {
+  Network.on("player:update", ({ id, worldOffset: theirWorldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy, deathCause, inQuiz }) => {
     const existing = otherPlayers.get(id);
     const worldX = theirWorldOffset + 90;
     const snapshot = { t: performance.now(), worldX, y, vy };
@@ -970,6 +1015,7 @@ const Game = (() => {
       if (existing.buffer.length > MAX_BUFFER_SIZE) existing.buffer.shift();
       existing.alive = alive;
       existing.dying = false;
+      existing.inQuiz = !!inQuiz;
     } else {
       otherPlayers.set(id, {
         nickname: "?",
@@ -981,6 +1027,7 @@ const Game = (() => {
         alive,
         dying: false,
         hasFlag: false,
+        inQuiz: !!inQuiz,
       });
     }
   });
@@ -1106,7 +1153,14 @@ const Game = (() => {
     stopNetworkSending();
     networkSendTimer = setInterval(() => {
       if (state === "playing" || state === "quiz") {
-        Network.sendPlayerState({ worldOffset, y: bird.y, vy: bird.vy, angle: 0, alive: true });
+        Network.sendPlayerState({
+          worldOffset,
+          y: bird.y,
+          vy: bird.vy,
+          angle: 0,
+          alive: true,
+          inQuiz: state === "quiz", // để người khác biết mà vẽ bong bóng "..." trên đầu mình
+        });
       }
     }, NETWORK_SEND_INTERVAL * 1000);
   }
@@ -1166,18 +1220,29 @@ const Game = (() => {
             alive: true,
             dying: false,
             hasFlag: !!p.hasFlag,
+            inQuiz: false,
           });
         }
       });
     }
 
-    resetRun();
+    // Bắt đầu ở state "countdown" (chim đứng yên, chưa rơi/bay được) thay vì "playing" ngay -
+    // canvas game đã hiện sẵn map/chim TRƯỚC khi đếm ngược 3-2-1 chạy đè lên trên, để người
+    // chơi kịp chuẩn bị tâm lý thay vì bị ném thẳng vào trận ngay lúc đếm xong (dễ rơi chết
+    // oan vì chưa kịp phản xạ). beginPlaying() sẽ mở khóa thật khi đếm ngược kết thúc.
+    resetRun("countdown");
     startNetworkSending();
 
     lastTime = null;
     if (rafId === null) {
       rafId = requestAnimationFrame(loop);
     }
+  }
+
+  // Gọi khi đếm ngược 3-2-1 kết thúc (lobby.js gọi) - chuyển từ "countdown" (chim đứng yên)
+  // sang "playing" thật, để trọng lực/va chạm bắt đầu tính từ đúng thời điểm này.
+  function beginPlaying() {
+    if (state === "countdown") state = "playing";
   }
 
   function stop() {
@@ -1197,5 +1262,5 @@ const Game = (() => {
   state = "idle";
   otherPlayers = new Map();
 
-  return { startMultiplayer, stop };
+  return { startMultiplayer, beginPlaying, stop };
 })();

@@ -248,7 +248,19 @@ const Lobby = (() => {
   });
 
   // ----- Màn hình 4: đếm ngược -----
-  Network.on("match:countdown", ({ count }) => {
+  // Canvas game + HUD hiện NGAY từ lúc bắt đầu đếm ngược (không đợi tới lúc đếm xong), với
+  // chim đứng yên ở state "countdown" (xem game.js) - overlay đếm ngược mờ đè lên trên canvas
+  // thay vì che riêng biệt, để người chơi thấy trước map/chim và kịp chuẩn bị tâm lý, tránh
+  // bị ném thẳng vào trận đúng lúc đếm xong (dễ rơi chết oan vì chưa kịp phản xạ).
+  Network.on("match:countdown", ({ count, seed, durationSec }) => {
+    if (count === 3 && seed !== undefined) {
+      hud.classList.remove("hidden");
+      luckyBoxHudContainer.classList.remove("hidden");
+      eventFeed.classList.remove("hidden");
+      lightningSkillHud.classList.remove("hidden");
+      Game.startMultiplayer({ seed, durationSec, room: currentRoom });
+    }
+
     showOnly("countdown");
     countdownNumber.textContent = count;
     countdownNumber.style.animation = "none";
@@ -259,14 +271,10 @@ const Lobby = (() => {
     if (count === 3) Audio_.playCountdown(); // chỉ phát 1 lần lúc bắt đầu đếm ngược
   });
 
-  // ----- Bắt đầu trận: chuyển quyền điều khiển sang game.js -----
-  Network.on("match:started", ({ seed, durationSec }) => {
-    showOnly(null); // ẩn hết overlay (kể cả countdown) để lộ canvas game
-    hud.classList.remove("hidden");
-    luckyBoxHudContainer.classList.remove("hidden");
-    eventFeed.classList.remove("hidden");
-    lightningSkillHud.classList.remove("hidden");
-    Game.startMultiplayer({ seed, durationSec, room: currentRoom });
+  // ----- Hết đếm ngược: mở khóa cho phép bay thật -----
+  Network.on("match:started", () => {
+    showOnly(null); // ẩn hết overlay (kể cả countdown) để lộ canvas game rõ hẳn
+    Game.beginPlaying();
   });
 
   // ----- Kết thúc trận: bảng tổng kết -----

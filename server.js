@@ -120,10 +120,15 @@ function endMatch(room) {
 
 function startCountdown(room) {
   room.state = "countdown";
+  // Sinh seed NGAY từ lúc bắt đầu đếm ngược (không đợi tới startMatch) và gửi kèm trong
+  // match:countdown đầu tiên - để client có thể dựng sẵn canvas game (map, chim đứng yên)
+  // NGAY LÚC ĐẾM NGƯỢC, thay vì đợi tới lúc đếm xong mới lộ ra, giúp người chơi kịp chuẩn bị
+  // tâm lý thay vì bị ném thẳng vào trận đúng lúc đếm xong (dễ rơi chết oan).
+  room.seed = Math.floor(Math.random() * 2 ** 31);
   broadcastRoomState(room);
 
   let count = 3;
-  io.to(room.code).emit("match:countdown", { count });
+  io.to(room.code).emit("match:countdown", { count, seed: room.seed, durationSec: room.durationSec });
   const tick = () => {
     count--;
     if (count > 0) {
@@ -138,7 +143,6 @@ function startCountdown(room) {
 
 function startMatch(room) {
   room.state = "playing";
-  room.seed = Math.floor(Math.random() * 2 ** 31);
   room.startedAt = Date.now();
   room.collectedBoxIndexes = new Set(); // chỉ 5 hộp DÙNG CHUNG cho cả phòng, reset mỗi trận mới
   for (const p of room.players.values()) {
@@ -291,7 +295,7 @@ io.on("connection", (socket) => {
 
   // Broadcast vị trí chim cho cả phòng trừ người gửi. worldOffset = quãng đường đã bay
   // trên map cố định (không phải x màn hình, luôn = 90).
-  socket.on("player:state", ({ worldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy, deathCause }) => {
+  socket.on("player:state", ({ worldOffset, y, vy, angle, alive, dying, deathStartY, deathStartVy, deathCause, inQuiz }) => {
     const room = rooms.get(socket.data.roomCode);
     if (!room || room.state !== "playing") return;
     const p = room.players.get(socket.id);
@@ -313,6 +317,7 @@ io.on("connection", (socket) => {
       deathStartY,
       deathStartVy,
       deathCause,
+      inQuiz,
     });
   });
 
