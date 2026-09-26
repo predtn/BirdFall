@@ -1,302 +1,192 @@
 [
   {
-    "question": "Theo thông điệp xuyên suốt của bài, nếu pháp luật là luật chơi thì Nhà nước pháp quyền là khi luật chơi được áp dụng cho ai?",
+    "question": "Theo quan điểm của chủ nghĩa Mác – Lênin, tôn giáo là gì?",
     "options": [
-      "Chỉ những người dân bình thường",
-      "Cả người cầm cò1",
-      "Chỉ các cơ quan tư pháp",
-      "Chỉ các doanh nghiệp lớn"
+      "Một hiện tượng tự nhiên",
+      "Một hình thái ý thức xã hội phản ánh hư ảo hiện thực khách quan",
+      "Một hệ thống pháp luật",
+      "Một hình thức tổ chức chính trị"
     ],
     "answerIndex": 1
   },
   {
-    "question": "Tình huống “trọng tài vừa đá bóng, vừa tự tính điểm” minh họa điều gì?",
+    "question": "Theo nội dung bài học, đâu không phải là một nguồn gốc của tôn giáo?",
     "options": [
-      "Cần có nhiều trọng tài hơn trong mỗi trận đấu",
-      "Luật chơi càng đơn giản thì càng dễ thực hiện",
-      "Đội mạnh nên được ưu tiên trong thi đấu",
-      "Người có quyền thực thi luật cũng phải bị ràng buộc bởi luậT"
+      "Nguồn gốc tự nhiên, kinh tế - xã hội",
+      "Nguồn gốc nhận thức",
+      "Nguồn gốc tâm lý",
+      "Nguồn gốc công nghệ"
     ],
     "answerIndex": 3
   },
   {
-    "question": "Theo cách nói dễ nhớ trong bài, cốt lõi của Nhà nước pháp quyền là gì?",
+    "question": "Điền vào chỗ trống: “Tôn giáo là một hiện tượng xã hội – ______ do con người sáng tạo ra.”",
     "options": [
-      "Quyền lực được đặt trong khuôn khổ pháp luật và có cơ chế kiểm soáT",
-      "Có thật nhiều bộ luật và văn bản pháp luật",
-      "Có bộ máy nhà nước đông đảo và hoạt động mạnh mẽ",
-      "Có hình phạt thật nghiêm khắc đối với mọi vi phạm"
-    ],
-    "answerIndex": 0
-  },
-  {
-    "question": "Theo bài, nhận định nào đúng về quyền lực nhà nước trong Nhà nước pháp quyền?",
-    "options": [
-      "Được thực hiện tùy ý trong mọi tình huống khẩn cấp",
-      "Chỉ cần kiểm soát khi người dân có yêu cầu",
-      "Không được thực hiện tùy tiện và phải có cơ chế kiểm soáT",
-      "Không cần giám sát nếu do cơ quan cấp cao thực hiện"
-    ],
-    "answerIndex": 2
-  },
-  {
-    "question": "Theo tinh thần “Rule of Law”, pháp luật được hiểu như thế nào?",
-    "options": [
-      "Pháp luật chỉ dùng để quản lý người dân",
-      "Pháp luật ràng buộc cả Nhà nước và người thực thi quyền lực, đồng thời bảo vệ các quyền cơ bảN",
-      "Pháp luật chỉ có giá trị khi được ghi thành văn bản",
-      "Pháp luật là công cụ để nhà nước tăng cường quyền lực"
+      "Chính trị",
+      "Văn hóa",
+      "Kinh tế",
+      "Pháp luật"
     ],
     "answerIndex": 1
   },
   {
-    "question": "“Rule by Law” có thể hiểu đơn giản là gì?",
+    "question": "Theo bài học, tôn giáo và tín ngưỡng có phải là hai khái niệm hoàn toàn đồng nhất không?",
     "options": [
-      "Sử dụng pháp luật như một công cụ để quản lÝ",
-      "Pháp luật đứng trên mọi chủ thể, kể cả Nhà nước",
-      "Pháp luật chỉ áp dụng cho người có quyền lực",
-      "Việc bãi bỏ các quy định pháp luật cũ"
-    ],
-    "answerIndex": 0
-  },
-  {
-    "question": "Vì sao “có luật” chưa đồng nghĩa với “có pháp quyền”?",
-    "options": [
-      "Vì luật luôn quá phức tạp để áp dụng",
-      "Vì mỗi quốc gia chỉ được có một số lượng luật nhất định",
-      "Vì luật chỉ có hiệu lực khi được toàn dân thuộc lòng",
-      "Vì còn phải xét luật được xây dựng, áp dụng và kiểm soát quyền lực như thế nàO"
-    ],
-    "answerIndex": 3
-  },
-  {
-    "question": "Quan điểm của bài về cách chia “phương Tây có pháp quyền, phương Đông không có” là gì?",
-    "options": [
-      "Hoàn toàn chính xác vì lịch sử đã chứng minh",
-      "Chỉ đúng với các nước phát triển",
-      "Là cách chia quá đơn giản, không nên hiểu như vậY",
-      "Chỉ đúng khi so sánh về hệ thống luật thành văn"
-    ],
-    "answerIndex": 2
-  },
-  {
-    "question": "Theo bài, nguyên nhân dẫn đến sự khác biệt về mô hình pháp luật và tổ chức quyền lực là gì?",
-    "options": [
-      "Do một bên có pháp luật, một bên không có pháp luật",
-      "Do điều kiện lịch sử, văn hóa và chính trị khác nhaU",
-      "Do sự khác nhau về diện tích và dân số quốc gia",
-      "Do sự khác nhau về trình độ công nghệ"
+      "Có",
+      "Không",
+      "Chỉ giống nhau ở Việt Nam",
+      "Chỉ giống nhau trong xã hội hiện đại"
     ],
     "answerIndex": 1
   },
   {
-    "question": "Về tư tưởng, một số khuynh hướng phương Tây thường nhấn mạnh điều gì?",
+    "question": "Hành vi tin vào những lực lượng siêu nhiên đến mức mê muội, cuồng tín và dẫn đến hành động trái với đạo đức, pháp luật được gọi là gì?",
     "options": [
-      "Giới hạn quyền lực nhà nước, quyền cá nhân và các cơ chế kiểm soáT",
-      "Trật tự xã hội, cộng đồng và ổn định là trên hết",
-      "Xóa bỏ hoàn toàn vai trò của nhà nước",
-      "Ưu tiên mục tiêu phát triển hơn mọi giới hạn pháp lý"
-    ],
-    "answerIndex": 0
-  },
-  {
-    "question": "Một số mô hình phương Đông có thể nhấn mạnh điều gì, đồng thời cách tiếp cận này ra sao?",
-    "options": [
-      "Chỉ nhấn mạnh quyền cá nhân; các nước đều giống nhau",
-      "Chỉ nhấn mạnh phân quyền tuyệt đối; các nước đều giống nhau",
-      "Không coi trọng pháp luật; các nước đều giống nhau",
-      "Trật tự xã hội, cộng đồng, ổn định, phát triển; cách tiếp cận rất đa dạnG"
-    ],
-    "answerIndex": 3
-  },
-  {
-    "question": "Về tổ chức quyền lực, nhiều mô hình phương Tây nhấn mạnh điều gì?",
-    "options": [
-      "Quyền lực tập trung vào một thiết chế duy nhất",
-      "Quyền lực không cần cơ chế kiểm tra, giám sát",
-      "Phân quyền, kiểm soát và đối trọng giữa các thiết chẾ",
-      "Quyền lực thuộc về từng cá nhân độc lập"
+      "Tín ngưỡng",
+      "Tôn giáo",
+      "Mê tín dị đoan",
+      "Niềm tin tôn giáo"
     ],
     "answerIndex": 2
   },
   {
-    "question": "Điểm chung giữa các mô hình Đông – Tây về Nhà nước pháp quyền theo bài là gì?",
+    "question": "Khi con người chưa thể giải thích đầy đủ các hiện tượng tự nhiên và xã hội, họ có thể tìm đến tôn giáo. Điều này phản ánh nguồn gốc nào của tôn giáo?",
     "options": [
-      "Đều tổ chức quyền lực theo cùng một cách",
-      "Quyền lực không nên tùy tiện, cần có khuôn khổ pháp luật và cơ chế kiểm soáT",
-      "Đều đặt ổn định xã hội lên trên pháp luật",
-      "Đều không cần bảo vệ quyền cá nhân"
+      "Nguồn gốc tâm lý",
+      "Nguồn gốc nhận thức",
+      "Nguồn gốc chính trị",
+      "Nguồn gốc pháp luật"
     ],
     "answerIndex": 1
   },
   {
-    "question": "Ví dụ “đi ăn buffet” nhằm truyền tải thông điệp nào?",
+    "question": "Sợ hãi trước thiên tai, bệnh tật, may rủi hoặc mong muốn được bình an là biểu hiện của nguồn gốc nào?",
     "options": [
-      "Mô hình tổ chức có thể khác nhau nhưng đã có luật thì người quản lý cũng phải tuân thỦ",
-      "Mô hình quản lý tập trung luôn tốt hơn mô hình phân công",
-      "Mô hình phân công nhiều người quản lý luôn tốt hơn quản lý tập trung",
-      "Luật buffet chỉ áp dụng cho khách, không áp dụng cho người quản lý"
-    ],
-    "answerIndex": 0
-  },
-  {
-    "question": "Văn bản nào được nhắc đến để xác định các đặc trưng và nhiệm vụ xây dựng, hoàn thiện Nhà nước pháp quyền XHCN Việt Nam trong giai đoạn mới?",
-    "options": [
-      "Nghị quyết 22-NQ/TW",
-      "Nghị quyết 37-NQ/TW",
-      "Nghị quyết 45-NQ/TW",
-      "Nghị quyết 27-NQ/Tw"
-    ],
-    "answerIndex": 3
-  },
-  {
-    "question": "Theo bài, Nhà nước pháp quyền XHCN Việt Nam được tổ chức và hoạt động theo nguyên tắc nào?",
-    "options": [
-      "Theo tập quán và truyền thống của từng địa phương",
-      "Theo quyết định của người đứng đầu từng cơ quan",
-      "Theo Hiến pháp và pháp luậT",
-      "Theo điều lệ nội bộ của từng cơ quan"
+      "Nhận thức",
+      "Kinh tế",
+      "Tâm lý",
+      "Chính trị"
     ],
     "answerIndex": 2
   },
   {
-    "question": "Về quyền con người, quyền công dân, đặc trưng được nêu trong bài là gì?",
+    "question": "Tính chất nào của tôn giáo cho thấy tôn giáo có sự hình thành, tồn tại, phát triển và biến đổi theo những điều kiện lịch sử nhất định?",
     "options": [
-      "Chỉ ghi nhận trong Hiến pháp, không cần cơ chế bảo đảm",
-      "Tôn trọng, bảo đảm và bảo vệ quyền con người, quyền công dâN",
-      "Chỉ bảo vệ khi không ảnh hưởng đến mục tiêu phát triển",
-      "Chỉ áp dụng cho công dân trong một số lĩnh vực nhất định"
-    ],
-    "answerIndex": 1
-  },
-  {
-    "question": "Theo Nghị quyết 27, quyền lực nhà nước ở Việt Nam có đặc điểm nào?",
-    "options": [
-      "Thống nhất, có phân công, phối hợp và kiểm soát giữa các cơ quaN",
-      "Phân chia tuyệt đối, mỗi cơ quan hoạt động độc lập hoàn toàn",
-      "Thống nhất nên không cần kiểm soát",
-      "Chỉ có phân công mà không cần phối hợp"
-    ],
-    "answerIndex": 0
-  },
-  {
-    "question": "Quyền lực nhà nước thống nhất có nghĩa là không có kiểm soát quyền lực không?",
-    "options": [
-      "Đúng, vì thống nhất thì không cần kiểm soát",
-      "Đúng, vì kiểm soát sẽ làm quyền lực bị phân tán",
-      "Không, vì quyền lực thống nhất nhưng có phân công, phối hợp và kiểm soáT",
-      "Không, vì phải tách quyền lực thành các phần hoàn toàn độc lập"
+      "Tính quần chúng",
+      "Tính chính trị",
+      "Tính lịch sử",
+      "Tính xã hội"
     ],
     "answerIndex": 2
   },
   {
-    "question": "Ví dụ nhóm 4 người làm slide, trong đó một người tự chấm điểm nhóm mình được 10 điểm, cho thấy điều gì?",
+    "question": "Vì sao tôn giáo có tính quần chúng?",
     "options": [
-      "Nhóm nên có nhiều thành viên hơn",
-      "Nên giao toàn bộ công việc cho người giỏi nhất",
-      "Nên bỏ chấm điểm để tránh tranh cãi",
-      "Cần có phân công và cơ chế kiểm soát để tránh một người nắm hết quyềN"
-    ],
-    "answerIndex": 3
-  },
-  {
-    "question": "Theo bài, hệ thống pháp luật trong Nhà nước pháp quyền XHCN Việt Nam cần được xây dựng như thế nào?",
-    "options": [
-      "Đồ sộ, chi tiết và ổn định tuyệt đối",
-      "Đồng bộ, công khai, minh bạch, khả thI",
-      "Linh hoạt, bảo mật và tập trung",
-      "Ngắn gọn, đơn giản và cố định"
+      "Vì tôn giáo chỉ dành cho tầng lớp thống trị",
+      "Vì tôn giáo có số lượng tín đồ đông đảo và đáp ứng nhu cầu văn hóa, tinh thần của một bộ phận nhân dân",
+      "Vì tôn giáo là một hình thức quản lý nhà nước",
+      "Vì tất cả mọi người đều theo một tôn giáo"
     ],
     "answerIndex": 1
   },
   {
-    "question": "Việc “chỉ đợi tham nhũng xảy ra rồi mới xử lý” được ví giống với điều gì?",
+    "question": "Theo quan điểm trong bài học, tính chính trị của tôn giáo xuất hiện rõ khi nào?",
     "options": [
-      "Chữa bệnh sau khi bệnh đã phát sinH",
-      "Xây nhà mà không cần bản vẽ",
-      "Phòng bệnh bằng cách tăng cường tiêm chủng",
-      "Dừng trận đấu để đổi trọng tài"
+      "Khi xã hội chưa có giai cấp",
+      "Khi xã hội xuất hiện sự phân chia giai cấp và khác biệt, đối kháng về lợi ích",
+      "Khi khoa học phát triển",
+      "Khi Internet xuất hiện"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "“Trong thời kỳ quá độ lên chủ nghĩa xã hội, tôn giáo sẽ lập tức biến mất.”",
+    "options": [
+      "Đúng",
+      "Sai"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "“Tôn trọng quyền tự do tín ngưỡng cũng bao gồm tôn trọng quyền không theo tôn giáo.”",
+    "options": [
+      "Đúng",
+      "Sai"
     ],
     "answerIndex": 0
   },
   {
-    "question": "Theo bài, công tác phòng, chống tham nhũng cần bao gồm những khâu nào?",
+    "question": "“Mọi hoạt động nhân danh tôn giáo đều được phép thực hiện mà không cần tuân thủ pháp luật.”",
     "options": [
-      "Điều tra, truy tố, xét xử",
-      "Tuyên truyền, giáo dục, khen thưởng",
-      "Phòng ngừa, phát hiện, xử lÝ",
-      "Thanh tra, kiểm toán, thu hồi tài sản"
+      "Đúng",
+      "Sai"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "“Tín đồ các tôn giáo và người không theo tôn giáo đều có quyền và nghĩa vụ xây dựng, bảo vệ Tổ quốc.”",
+    "options": [
+      "Đúng",
+      "Sai"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "“Giải quyết vấn đề tôn giáo chỉ là trách nhiệm của cơ quan quản lý nhà nước về tôn giáo.”",
+    "options": [
+      "Đúng",
+      "Sai"
+    ],
+    "answerIndex": 1
+  },
+  {
+    "question": "Một người có quyền lựa chọn theo một tôn giáo, đổi tôn giáo hoặc không theo tôn giáo. Điều này thể hiện nguyên tắc nào?",
+    "options": [
+      "Tự do tín ngưỡng và không tín ngưỡng",
+      "Tính chính trị của tôn giáo",
+      "Tính lịch sử của tôn giáo",
+      "Quản lý hoạt động tôn giáo"
+    ],
+    "answerIndex": 0
+  },
+  {
+    "question": "Một nhóm người lợi dụng danh nghĩa tôn giáo để lừa đảo, kích động chia rẽ cộng đồng và thực hiện hành vi trái pháp luật. Theo nội dung bài học, cần xử lý như thế nào?",
+    "options": [
+      "Cấm tất cả các hoạt động tôn giáo",
+      "Không xử lý vì đây là vấn đề tôn giáo",
+      "Phân biệt hoạt động tín ngưỡng, tôn giáo bình thường với hành vi lợi dụng tôn giáo để vi phạm pháp luật",
+      "Cấm mọi người theo tôn giáo đó"
     ],
     "answerIndex": 2
   },
   {
-    "question": "Nhóm hoạt động nào sau đây thuộc khâu PHÁT HIỆN?",
+    "question": "Một người sử dụng mạng xã hội đăng bài cho rằng “tất cả người theo tôn giáo X đều mê tín và không yêu nước”. Nội dung này đi ngược lại nguyên tắc nào?",
     "options": [
-      "Quy định rõ trách nhiệm và hạn chế xung đột lợi ích",
-      "Kiểm tra, thanh tra, kiểm toán, giám sát, điều trA",
-      "Kỷ luật, truy tố, xét xử",
-      "Thu hồi tài sản và khắc phục hậu quả"
-    ],
-    "answerIndex": 1
-  },
-  {
-    "question": "Vụ án “Chuyến bay giải cứu” liên quan đến các hành vi nào?",
-    "options": [
-      "Rửa tiền và vận chuyển trái phép tiền tệ qua biên giới",
-      "Lừa đảo chiếm đoạt tài sản",
-      "Tham ô tài sản và vi phạm quy định về cho vay",
-      "Đưa hối lộ, nhận hối lộ, môi giới hối lộ và lợi dụng chức vụ, quyền hạN"
-    ],
-    "answerIndex": 3
-  },
-  {
-    "question": "Phiên sơ thẩm năm 2023 vụ “Chuyến bay giải cứu” tại TAND TP Hà Nội xét xử bao nhiêu bị cáo?",
-    "options": [
-      "54 bị cáO",
-      "45 bị cáo",
-      "72 bị cáo",
-      "24 bị cáo"
+      "Tôn trọng tự do tín ngưỡng và đoàn kết dân tộc",
+      "Phát triển kinh tế",
+      "Quan hệ đối ngoại",
+      "Tính lịch sử của tôn giáo"
     ],
     "answerIndex": 0
   },
   {
-    "question": "Ở vụ Vạn Thịnh Phát/SCB, giai đoạn 2 liên quan đến các tội danh nào?",
+    "question": "Trên mạng xã hội xuất hiện một video quảng cáo: “Chỉ cần thực hiện nghi lễ này, bạn chắc chắn khỏi bệnh, không cần điều trị y tế.” Theo kiến thức bài học, hiện tượng này cần được nhìn nhận như thế nào?",
     "options": [
-      "Tham ô tài sản, đưa hối lộ và vi phạm quy định về cho vay",
-      "Lừa đảo chiếm đoạt tài sản, rửa tiền và vận chuyển trái phép tiền tệ qua biên giớI",
-      "Nhận hối lộ, môi giới hối lộ và lợi dụng chức vụ, quyền hạn",
-      "Buôn lậu, trốn thuế và vi phạm quy định về đấu thầu"
+      "Luôn là hoạt động tôn giáo bình thường",
+      "Có dấu hiệu mê tín dị đoan và cần xem xét dựa trên nội dung, hành vi cụ thể",
+      "Là tín ngưỡng truyền thống nên không cần quan tâm",
+      "Chứng minh rằng mọi tôn giáo đều mê tín"
     ],
     "answerIndex": 1
   },
   {
-    "question": "Thông điệp chính khi kể vụ “Chuyến bay giải cứu” là gì?",
+    "question": "Một câu hỏi tổng kết: Theo nội dung bài học, cách tiếp cận phù hợp khi giải quyết vấn đề tín ngưỡng, tôn giáo là gì?",
     "options": [
-      "Cần ghi nhớ đầy đủ tên tất cả các bị cáo",
-      "Cần nhớ chính xác mức án của từng người",
-      "Cần thấy vai trò của cơ chế phát hiện, điều tra, truy tố, xét xử khi quyền lực bị lạm dụnG",
-      "Cần chứng minh mọi quy trình cấp phép đều có sai sót"
+      "Cấm đoán tất cả hoạt động tôn giáo",
+      "Chỉ tập trung vào việc loại bỏ tôn giáo",
+      "Tôn trọng quyền tự do tín ngưỡng, đồng thời bảo đảm hoạt động tôn giáo tuân thủ pháp luật và xem xét vấn đề theo quan điểm lịch sử cụ thể",
+      "Không cần quản lý bất kỳ hoạt động tôn giáo nào"
     ],
     "answerIndex": 2
-  },
-  {
-    "question": "Thông điệp rút ra từ vụ Vạn Thịnh Phát/SCB ở Slide 12 là gì?",
-    "options": [
-      "Chỉ cá nhân có chức vụ mới bị xử lý theo pháp luật",
-      "Chỉ hành vi gây thiệt hại vật chất mới bị xử lý",
-      "Vụ án kinh tế chỉ xử lý theo trình tự dân sự",
-      "Người có quyền lực hoặc vị trí xã hội không nằm ngoài pháp luậT"
-    ],
-    "answerIndex": 3
-  },
-  {
-    "question": "Câu kết của bài thuyết trình là gì?",
-    "options": [
-      "Pháp luật không chỉ để quản lý người dân, pháp luật còn để kiểm soát người có quyền lựC.",
-      "Pháp luật chỉ có hiệu lực khi được toàn xã hội tự giác tuân thủ.",
-      "Pháp luật càng nhiều thì Nhà nước pháp quyền càng vững mạnh.",
-      "Pháp luật là công cụ quản lý hiệu quả nhất của nhà nước."
-    ],
-    "answerIndex": 0
   }
 ]
