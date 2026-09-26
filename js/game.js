@@ -101,6 +101,17 @@ const Game = (() => {
   const luckyBoxImg = new Image();
   luckyBoxImg.src = "assets/lucky_box.png";
 
+  // ----- Hiệu ứng nhặt được lucky box: vòng sáng lan tỏa + ảnh "bim bim" (random 1/3) hiện
+  // dần tại đúng vị trí world đã nhặt - chỉ hiện cho CHÍNH MÌNH (người khác không cần thấy). ----
+  const SNACK_REVEAL_DURATION_MS = 1200;
+  const SNACK_IMAGE_URLS = ["assets/vang.png", "assets/xanhduong.png", "assets/xanhla.png"];
+  const snackImgs = SNACK_IMAGE_URLS.map((src) => {
+    const img = new Image();
+    img.src = src;
+    return img;
+  });
+  let activeSnackReveals = []; // [{ worldX, y, startTime, img }]
+
   // ----- Skill sét đánh: sạc đầy sau LIGHTNING_CHARGE_NEEDED câu trả lời đúng liên tiếp,
   // dùng để triệu hồi sét đánh chết 2 người chơi ngẫu nhiên khác (không mất bestScore, chỉ
   // phải bay lại từ đầu giống chết bình thường). Server làm trọng tài toàn bộ (đếm charge,
@@ -489,7 +500,55 @@ const Game = (() => {
     const dyingAngle = state === "dying" ? deathAnimElapsed * DEATH_SPIN_SPEED : undefined;
     drawBird({ x: 90, y: bird.y, vy: bird.vy }, true, null, dyingAngle, hasFlag, myAvatarId, state === "quiz");
     drawLightningBolts();
+    drawSnackReveals();
     drawRaceBar();
+  }
+
+  // Hiệu ứng nhặt lucky box: vòng sáng lan tỏa (giãn to + mờ dần) kèm ảnh "bim bim" (random
+  // 1/3 ảnh) hiện dần (fade-in + phóng to nhẹ) tại đúng vị trí world đã nhặt. Chỉ hiện cho
+  // CHÍNH MÌNH (trigger ở listener player:luckyBoxCollected khi winnerId === Network.id).
+  function drawSnackReveals() {
+    if (activeSnackReveals.length === 0) return;
+    const now = performance.now();
+
+    activeSnackReveals = activeSnackReveals.filter((r) => now - r.startTime < SNACK_REVEAL_DURATION_MS);
+
+    for (const reveal of activeSnackReveals) {
+      const screenX = reveal.worldX - worldOffset;
+      if (screenX < -VIEW_MARGIN || screenX > W + VIEW_MARGIN) continue;
+
+      const elapsed = now - reveal.startTime;
+      const progress = Math.min(1, elapsed / SNACK_REVEAL_DURATION_MS);
+
+      // Vòng sáng: giãn to dần từ 0 tới bán kính tối đa, mờ dần theo progress
+      const glowRadius = 20 + progress * 60;
+      const glowAlpha = 1 - progress;
+      ctx.save();
+      ctx.globalAlpha = glowAlpha;
+      const glowGrad = ctx.createRadialGradient(screenX, reveal.y, 0, screenX, reveal.y, glowRadius);
+      glowGrad.addColorStop(0, "rgba(255, 245, 200, 0.9)");
+      glowGrad.addColorStop(1, "rgba(255, 245, 200, 0)");
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(screenX, reveal.y, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Ảnh bim bim: hiện dần (opacity tăng nhanh trong 40% đầu, giữ nguyên rồi mờ dần cuối)
+      // và phóng to nhẹ từ 0.6x lên 1x, để cảm giác "từ từ hiện ra" như yêu cầu.
+      if (reveal.img.complete && reveal.img.naturalWidth > 0) {
+        const imgAlpha = progress < 0.4 ? progress / 0.4 : progress > 0.75 ? 1 - (progress - 0.75) / 0.25 : 1;
+        const scale = 0.6 + Math.min(1, progress / 0.4) * 0.4;
+        const displayHeight = 60 * scale;
+        const aspect = reveal.img.naturalWidth / reveal.img.naturalHeight;
+        const displayWidth = displayHeight * aspect;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, imgAlpha);
+        ctx.drawImage(reveal.img, screenX - displayWidth / 2, reveal.y - displayHeight / 2, displayWidth, displayHeight);
+        ctx.restore();
+      }
+    }
   }
 
   // Vẽ tia sét zigzag ngẫu nhiên từ đỉnh màn hình đánh thẳng xuống đúng vị trí world của nạn
@@ -1057,6 +1116,10 @@ const Game = (() => {
     if (winnerId === Network.id) {
       luckyBoxCount++;
       luckyBoxHud.textContent = String(luckyBoxCount);
+      if (box) {
+        const randomImg = snackImgs[Math.floor(Math.random() * snackImgs.length)];
+        activeSnackReveals.push({ worldX: box.worldX, y: box.y, startTime: performance.now(), img: randomImg });
+      }
     }
   });
 
@@ -1208,6 +1271,7 @@ const Game = (() => {
 
     myLightningCharge = 0;
     activeLightningBolts = [];
+    activeSnackReveals = [];
     updateLightningSkillHud();
 
     otherPlayers = new Map();

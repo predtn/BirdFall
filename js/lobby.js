@@ -13,6 +13,7 @@ const Lobby = (() => {
     menu: document.getElementById("menu-screen"),
     create: document.getElementById("create-screen"),
     join: document.getElementById("join-screen"),
+    editAvatar: document.getElementById("edit-avatar-screen"),
     waiting: document.getElementById("waiting-screen"),
     countdown: document.getElementById("countdown-screen"),
     results: document.getElementById("results-screen"),
@@ -30,6 +31,10 @@ const Lobby = (() => {
 
   const showCreateBtn = document.getElementById("show-create-btn");
   const showJoinBtn = document.getElementById("show-join-btn");
+  const editAvatarBtn = document.getElementById("edit-avatar-btn");
+  const editAvatarGrid = document.getElementById("edit-avatar-grid");
+  const editAvatarSaveBtn = document.getElementById("edit-avatar-save-btn");
+  const editAvatarBackBtn = document.getElementById("edit-avatar-back-btn");
 
   const createRoomName = document.getElementById("create-room-name");
   const createRoomDuration = document.getElementById("create-room-duration");
@@ -89,9 +94,10 @@ const Lobby = (() => {
     return currentRoom && currentRoom.hostId === Network.id;
   }
 
-  // ----- Chọn avatar (ngay tại màn hình nickname) -----
-  function renderAvatarGrid() {
-    avatarGrid.innerHTML = "";
+  // ----- Chọn avatar - dùng chung cho màn hình nickname VÀ màn hình "Chỉnh nhân vật" -----
+  // (2 grid độc lập trên DOM, nhưng cùng ghi vào selectedAvatarId và đồng bộ lẫn nhau).
+  function renderAvatarGrid(containerEl) {
+    containerEl.innerHTML = "";
     for (let i = 1; i <= AVATAR_COUNT; i++) {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -106,11 +112,11 @@ const Lobby = (() => {
 
       btn.addEventListener("click", () => {
         selectedAvatarId = i;
-        avatarGrid.querySelectorAll(".avatar-option").forEach((el) => el.classList.remove("selected"));
+        containerEl.querySelectorAll(".avatar-option").forEach((el) => el.classList.remove("selected"));
         btn.classList.add("selected");
       });
 
-      avatarGrid.appendChild(btn);
+      containerEl.appendChild(btn);
     }
   }
 
@@ -143,6 +149,24 @@ const Lobby = (() => {
   });
   createBackBtn.addEventListener("click", () => showOnly("menu"));
   joinBackBtn.addEventListener("click", () => showOnly("menu"));
+
+  // ----- Màn hình 2c: chỉnh lại avatar (đổi ý sau khi đã vào menu, không cần nhập lại nickname) -----
+  let avatarBeforeEdit = selectedAvatarId; // lưu tạm để có thể "Quay lại" hủy thay đổi chưa lưu
+
+  editAvatarBtn.addEventListener("click", () => {
+    avatarBeforeEdit = selectedAvatarId;
+    renderAvatarGrid(editAvatarGrid);
+    showOnly("editAvatar");
+  });
+
+  editAvatarSaveBtn.addEventListener("click", () => {
+    showOnly("menu");
+  });
+
+  editAvatarBackBtn.addEventListener("click", () => {
+    selectedAvatarId = avatarBeforeEdit; // hủy thay đổi chưa lưu, quay về avatar cũ
+    showOnly("menu");
+  });
 
   // ----- Màn hình 2a: tạo phòng -----
   createRoomBtn.addEventListener("click", async () => {
@@ -375,7 +399,7 @@ const Lobby = (() => {
 
   // ----- Khởi động -----
   Quiz.loadQuestions();
-  renderAvatarGrid();
+  renderAvatarGrid(avatarGrid);
   showOnly("nickname");
 
   return {};

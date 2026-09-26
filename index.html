@@ -16,7 +16,7 @@
       <h1>Try Not To Fall</h1>
       <p>Nhập biệt danh và chọn avatar để bắt đầu</p>
       <input id="nickname-input" type="text" maxlength="16" placeholder="Biệt danh..." autocomplete="off">
-      <p class="field-label">Chọn nhân vật/p>
+      <p class="field-label">Chọn nhân vật </p>
       <div id="avatar-grid" class="avatar-grid"></div>
       <button id="nickname-confirm-btn">Tiếp tục</button>
       <p id="nickname-error" class="error-text"></p>
@@ -28,6 +28,18 @@
       <div class="menu-actions">
         <button id="show-create-btn">Tạo phòng</button>
         <button id="show-join-btn">Vào phòng</button>
+        <button id="edit-avatar-btn" class="btn-secondary">Chỉnh nhân vật</button>
+      </div>
+    </div>
+
+    <!-- 2c. Chỉnh lại avatar (không cần nhập lại nickname) -->
+    <div id="edit-avatar-screen" class="overlay hidden">
+      <h1>Chỉnh nhân vật</h1>
+      <p class="field-label">Chọn nhân vật</p>
+      <div id="edit-avatar-grid" class="avatar-grid"></div>
+      <div class="menu-actions">
+        <button id="edit-avatar-save-btn">Lưu</button>
+        <button id="edit-avatar-back-btn" class="btn-secondary">Quay lại</button>
       </div>
     </div>
 
